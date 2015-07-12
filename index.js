@@ -245,7 +245,7 @@ eventEmitter.on('DEW', function(data){
     sp.write('c');
     setTimeout(function(){
       sp.write('f');
-      ap.write('o');
+      sp.write('o');
     },180000);
     lastTime = Date.now();
     };
