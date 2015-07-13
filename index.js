@@ -1,3 +1,6 @@
+//quick test
+
+
 //Connect serial port. Emit incoming data.
 
 var serialport = require("serialport");
@@ -257,7 +260,7 @@ app.use(express.static(__dirname + '/public'));
 var dewOn = 60;
 var dewOff = 57;
 var dewCur = 58;
-var dewStatus = "Off";
+var dewStatus = "Off";a
 var lastTime = Date.now();
 
 eventEmitter.on('DEW', function(data){
@@ -286,7 +289,6 @@ eventEmitter.on('DEW', function(data){
 });
 
 //Update database.
-
 var level = require('level');
 var leveldb = level( __dirname + '/hemdb');
 
@@ -353,7 +355,6 @@ eventEmitter.on('2813513F03000072',function(data){
 
 
 //Time helper functions
-
 function time15m(){
   return Math.floor((Date.now()/1000)/(15*60))*15*60*1000;
 }
