@@ -84,7 +84,7 @@ eventEmitter.on('GPM', wGPM);
 
 var sum = [];
 function trend(data){
-  if (sum.push(data) > 60){
+  if (sum.push(data) > 120){
     sum.shift();
   };
   var total=0
@@ -219,6 +219,37 @@ app.get('/dewstatus', function(req, res){
   res.send(obj);
 });
 
+var grpmap = [];
+  grpmap['kWh']='kWh';
+  grpmap['W']='W';
+  grpmap['Gal']='Gal';
+  grpmap['GPM']='GPM';
+  grpmap['In']='In';
+  grpmap['Out']='Out';
+  grpmap['Upper']='Upper';
+  grpmap['Lower']='Lower';
+  grpmap['DEW']='DEW';
+  grpmap['T']='T';
+
+var timemap=[];
+  timemap['15m']='15m';
+  timemap['60m']='60m';
+  timemap['24h']='24h';
+  timemap['28d']='28d';
+
+app.get('/chart/:grp/:time', function(req, res){
+  var out = [];
+  var grp = grpmap[req.params.grp];
+  var time = timemap[req.params.time];
+  leveldb.createReadStream({start:'HEM!' + grp + '!' + time + '!', end:'HEM!' + grp + '!' + time + '!\xff', keys: false})
+    .on('data',function(data){
+      out.push(JSON.parse(data));
+    })
+    .on('close',function(){
+      res.jsonp(out);
+    })
+});
+
 app.use(express.static(__dirname + '/public'));
 
 //Dewostat functionality.
@@ -248,7 +279,10 @@ eventEmitter.on('DEW', function(data){
       sp.write('o');
     },180000);
     lastTime = Date.now();
-    };
+  };
+  if (lastTime - Date.now()) {
+    
+  }
 });
 
 //Update database.
@@ -261,6 +295,10 @@ eventEmitter.on('W', function(data){
   incCounter(leveldb,'HEM!kWh!60m!',time60m(),.002);
   incCounter(leveldb,'HEM!kWh!24h!',time24h(),.002);
   incCounter(leveldb,'HEM!kWh!28d!',time28d(),.002);
+  storeAvg(leveldb,'HEM!W!15m!',time15m(),data);
+  storeAvg(leveldb,'HEM!W!60m!',time60m(),data);
+  storeAvg(leveldb,'HEM!W!24h!',time24h(),data);
+
   leveldb.get('HEM!kWh!28d!' + time28d(),function(err,value){
     if (err) {
       if (err.notFound) {
@@ -275,6 +313,44 @@ eventEmitter.on('W', function(data){
     }
   });
 });
+
+eventEmitter.on('GPM',function(data){
+  incCounter(leveldb,'HEM!Gal!15m!',time15m(),.25);
+  incCounter(leveldb,'HEM!Gal!60m!',time60m(),.25);
+  incCounter(leveldb,'HEM!Gal!24h!',time24h(),.25);
+  incCounter(leveldb,'HEM!Gal!28d!',time28d(),.25);
+  storeAvg(leveldb,'HEM!GPM!15m!',time15m(),data);
+  storeAvg(leveldb,'HEM!GPM!60m!',time60m(),data);
+  storeAvg(leveldb,'HEM!GPM!24h!',time24h(),data);
+});
+
+eventEmitter.on('28955E3F03000045',function(data){
+  storeAvg(leveldb,'HEM!In!15m!',time15m(),data);
+  storeAvg(leveldb,'HEM!In!60m!',time60m(),data);
+  storeAvg(leveldb,'HEM!In!24h!',time24h(),data);
+});
+
+eventEmitter.on('289C653F03000027',function(data){
+  storeAvg(leveldb,'HEM!Out!15m!',time15m(),data);
+  storeAvg(leveldb,'HEM!Out!60m!',time60m(),data);
+  storeAvg(leveldb,'HEM!Out!24h!',time24h(),data);
+  storeAvg(leveldb,'HEM!Out!28d!',time28d(),data);
+});
+
+eventEmitter.on('2809853F030000A7',function(data){
+  storeAvg(leveldb,'HEM!Upper!15m!',time15m(),data);
+  storeAvg(leveldb,'HEM!Upper!60m!',time60m(),data);
+  storeAvg(leveldb,'HEM!Upper!24h!',time24h(),data);
+  storeAvg(leveldb,'HEM!Upper!28d!',time28d(),data);
+});
+
+eventEmitter.on('2813513F03000072',function(data){
+  storeAvg(leveldb,'HEM!Lower!15m!',time15m(),data);
+  storeAvg(leveldb,'HEM!Lower!60m!',time60m(),data);
+  storeAvg(leveldb,'HEM!Lower!24h!',time24h(),data);
+  storeAvg(leveldb,'HEM!Lower!28d!',time28d(),data);
+});
+
 
 //Time helper functions
 
@@ -370,3 +446,35 @@ function readDB(db,prefix,res){
       res.send(out);
     })
 }
+
+var nodemailer = require('nodemailer');
+
+// create reusable transporter object using SMTP transport
+var transporter = nodemailer.createTransport({
+    service: 'Gmail',
+    auth: {
+        user: 'kmitchel46725@gmail.com',
+        pass: 'mnt69dew'
+    }
+});
+
+// NB! No need to recreate the transporter object. You can use
+// the same transporter object for all e-mails
+
+// setup e-mail data with unicode symbols
+var mailOptions = {
+    from: 'Kenneth Mitchell <kmitchel46725@gmail.com>', // sender address
+    to: '2602298898@vtext.com', // list of receivers
+    subject: 'HEM', // Subject line
+//    text: 'Hello world ✔', // plaintext body
+//    html: '<b>Hello world ✔</b>' // html body
+};
+
+// send mail with defined transport object
+// transporter.sendMail(mailOptions, function(error, info){
+//     if(error){
+//         return console.log(error);
+//     }
+//     console.log('Message sent: ' + info.response);
+
+// });
