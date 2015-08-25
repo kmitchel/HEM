@@ -16,7 +16,6 @@
   <span id='gpm'></span>
   <span id='rh'></span>
   <span id='dew'></span>
-  <span id='trend'></span>
   <img id="watt2" width=100%>
   <br>
   <img id="temp2" width=100%>
@@ -101,9 +100,6 @@
       });
       iosocket.on('DEW', function(message){
         $('#dew').html('DEW: ' + message + 'F<br>');
-      });
-      iosocket.on('TREND', function(message){
-        $('#trend').html('Trend: ' + message + 'F<br>');
       });
     });
   });

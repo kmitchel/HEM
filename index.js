@@ -1,108 +1,147 @@
-//quick test
-
-
 //Connect serial port. Emit incoming data.
-
-var serialport = require("serialport");
+var serialport = require('serialport');
 var serialPort = serialport.SerialPort;
 
-var sp = new serialPort("/dev/ttyAMA0",{
+var sp = new serialPort('/dev/arduino',{
   baudrate: 57600,
-  parser: serialport.parsers.readline("\r\n")
+  parser: serialport.parsers.readline('\r\n')
 });
 
-var events = require('events');
-var eventEmitter = new events.EventEmitter();
-
-function spData (data){
-  var split = data.trim().split(":");
-  eventEmitter.emit(split[0],Number(split[1]));
-  io.emit(split[0],Number(split[1]));
-};
-sp.on('data', spData);
+//Update database.
+var level = require('level');
+var leveldb = level( __dirname + '/hemdb');
 
 //Spawn rrdtool child process. Update RRD files.
-
 var spawn = require('child_process').spawn;
 var child = spawn('rrdtool', ['-']);
 
 child.stdout.on('data', function(data){
+  //console.log(data.toString());
 });
 
 child.stderr.on('data', function(data){
-  console.log(data.toString());
+  console.error(data.toString());
 });
 
-function wEvent(data){
-  child.stdin.write('update ' + __dirname + '/hem-w.rrd N:' + data + '\n');
-};
-eventEmitter.on('W', wEvent);
+var helper = require('./helper.js');
 
-function inEvent(data){
-  child.stdin.write('update ' + __dirname + '/hem-in.rrd N:' + data + '\n');
-};
-eventEmitter.on('T', inEvent);
+var dewOn = 56;
+var dewOff = 54;
+var dewCur = 55;
+var dewStatus = "Off";
+var lastTime = Date.now();
 
-function outEvent(data){
-  child.stdin.write('update ' + __dirname + '/hem-out.rrd N:' + data + '\n');
-};
-eventEmitter.on('289C653F03000027', outEvent);
+function spData (data){
+  var split = data.trim().split(":");
+  var data = Number(split[1]);
+  io.emit(split[0],data);
 
-function dewEvent(data){
-  child.stdin.write('update ' + __dirname + '/hem-dew.rrd N:' + data + '\n');
-};
-eventEmitter.on('DEW', dewEvent);
+  switch(split[0]){
+    case 'W':
+      child.stdin.write('update ' + __dirname + '/hem-w.rrd N:' + data + '\n');
+      helper.incCounter(leveldb,'HEM!kWh!15m!',helper.time15m(),.002);
+      helper.incCounter(leveldb,'HEM!kWh!60m!',helper.time60m(),.002);
+      helper.incCounter(leveldb,'HEM!kWh!24h!',helper.time24h(),.002);
+      helper.incCounter(leveldb,'HEM!kWh!28d!',helper.time28d(),.002);
+      helper.storeAvg(leveldb,'HEM!W!15m!',helper.time15m(),data);
+      helper.storeAvg(leveldb,'HEM!W!60m!',helper.time60m(),data);
+      helper.storeAvg(leveldb,'HEM!W!24h!',helper.time24h(),data);
+      helper.storeAvg(leveldb,'HEM!W!28d!',helper.time28d(),data);
+      leveldb.get('HEM!kWh!28d!' + helper.time28d(),function(err,value){
+        if (err) {
+          if (err.notFound) {
+            // handle a 'NotFoundError' here
+            io.emit('kWh', 0);
+            returns
+          }
+        // I/O or other error, pass it up the callback chain
+        return callback(err)
+        } else {
+          io.emit('kWh', JSON.parse(value)[1]);
+        }
+      });
+      break;
 
-function rhEvent(data){
-  child.stdin.write('update ' + __dirname + '/hem-rh.rrd N:' + data + '\n');
-};
-eventEmitter.on('RH', rhEvent);
+    case 'T':
+      child.stdin.write('update ' + __dirname + '/hem-in.rrd N:' + data + '\n');
+      helper.storeAvg(leveldb,'HEM!In!15m!',helper.time15m(),data);
+      helper.storeAvg(leveldb,'HEM!In!60m!',helper.time60m(),data);
+      helper.storeAvg(leveldb,'HEM!In!24h!',helper.time24h(),data);
+      helper.storeAvg(leveldb,'HEM!In!28d!',helper.time28d(),data);
+      break;
 
-function upperEvent(data){
-  child.stdin.write('update ' + __dirname + '/hem-upper.rrd N:' + data + '\n');
-};
-eventEmitter.on('2809853F030000A7', upperEvent);
+    case '289C653F03000027':
+      child.stdin.write('update ' + __dirname + '/hem-out.rrd N:' + data + '\n');
+      helper.storeAvg(leveldb,'HEM!Out!15m!',helper.time15m(),data);
+      helper.storeAvg(leveldb,'HEM!Out!60m!',helper.time60m(),data);
+      helper.storeAvg(leveldb,'HEM!Out!24h!',helper.time24h(),data);
+      helper.storeAvg(leveldb,'HEM!Out!28d!',helper.time28d(),data);
+      break;
 
-function lowerEvent(data){
-  child.stdin.write('update ' + __dirname + '/hem-lower.rrd N:' + data + '\n');
-};
-eventEmitter.on('2813513F03000072', lowerEvent);
+    case 'DEW':
+      child.stdin.write('update ' + __dirname + '/hem-dew.rrd N:' + data + '\n');
+      dewCur=data;
+      if (dewCur >= dewOn && Date.now()-lastTime > 300000 ) {
+        dewStatus = "On";
+        sp.write('F');
+        sp.write('C');
+        sp.write('O');
+        lastTime = Date.now();
+      };
+      if (dewCur <= dewOff && Date.now()-lastTime > 600000) {
+        dewStatus = "Off";
+        sp.write('o');
+        sp.write('c');
+        sp.write('f');
+        lastTime = Date.now();
+      };
+      break;
 
-function achighEvent(data){
-  child.stdin.write('update ' + __dirname + '/hem-achigh.rrd N:' + data + '\n');
-};
-eventEmitter.on('2823583F0300006C', achighEvent);
+    case 'RH':
+      child.stdin.write('update ' + __dirname + '/hem-rh.rrd N:' + data + '\n');
+      break;
 
-function aclowEvent(data){
-  child.stdin.write('update ' + __dirname + '/hem-aclow.rrd N:' + data + '\n');
-};
-eventEmitter.on('28AE3A3F0300005E', aclowEvent);
+    case '2809853F030000A7':
+      child.stdin.write('update ' + __dirname + '/hem-upper.rrd N:' + data + '\n');
+      helper.storeAvg(leveldb,'HEM!Upper!15m!',helper.time15m(),data);
+      helper.storeAvg(leveldb,'HEM!Upper!60m!',helper.time60m(),data);
+      helper.storeAvg(leveldb,'HEM!Upper!24h!',helper.time24h(),data);
+      helper.storeAvg(leveldb,'HEM!Upper!28d!',helper.time28d(),data);
+      break;
 
-function wGPM(data){
-  child.stdin.write('update ' + __dirname + '/hem-gpm.rrd N:' + data + '\n');
-};
-eventEmitter.on('GPM', wGPM);
+    case '2813513F03000072':
+      child.stdin.write('update ' + __dirname + '/hem-lower.rrd N:' + data + '\n');
+      helper.storeAvg(leveldb,'HEM!Lower!15m!',helper.time15m(),data);
+      helper.storeAvg(leveldb,'HEM!Lower!60m!',helper.time60m(),data);
+      helper.storeAvg(leveldb,'HEM!Lower!24h!',helper.time24h(),data);
+      helper.storeAvg(leveldb,'HEM!Lower!28d!',helper.time28d(),data);
+      break;
 
-//Rolling average of DEW point.
+    case '2823583F0300006C':
+      child.stdin.write('update ' + __dirname + '/hem-achigh.rrd N:' + data + '\n');
+      break;
 
-var sum = [];
-function trend(data){
-  if (sum.push(data) > 120){
-    sum.shift();
-  };
-  var total=0
-  for (index = 0; index < sum.length; index++) {
-      total += sum[index];
+    case '28AE3A3F0300005E':
+      child.stdin.write('update ' + __dirname + '/hem-aclow.rrd N:' + data + '\n');
+      break;
+
+    case 'GPM':
+      child.stdin.write('update ' + __dirname + '/hem-gpm.rrd N:' + data + '\n');
+      helper.incCounter(leveldb,'HEM!Gal!15m!',helper.time15m(),.25);
+      helper.incCounter(leveldb,'HEM!Gal!60m!',helper.time60m(),.25);
+      helper.incCounter(leveldb,'HEM!Gal!24h!',helper.time24h(),.25);
+      helper.incCounter(leveldb,'HEM!Gal!28d!',helper.time28d(),.25);
+      helper.storeAvg(leveldb,'HEM!GPM!15m!',helper.time15m(),data);
+      helper.storeAvg(leveldb,'HEM!GPM!60m!',helper.time60m(),data);
+      helper.storeAvg(leveldb,'HEM!GPM!24h!',helper.time24h(),data);
+      helper.storeAvg(leveldb,'HEM!GPM!28d!',helper.time28d(),data);
+      break;
   }
-  child.stdin.write('update ' + __dirname + '/hem-dew2.rrd N:' + (total/sum.length).toFixed(1) + '\n');
-  eventEmitter.emit('TREND',(total/sum.length).toFixed(1));
-  io.emit('TREND',(total/sum.length).toFixed(1));
 
 };
-eventEmitter.on('DEW', trend);
+sp.on('data', spData);
 
 //Webserver
-
 var express = require('express');
 var app = express();
 var server = require('http').Server(app);
@@ -170,16 +209,16 @@ function graph(req,res){
     case 'watt':
       arg.push('-o');
       arg.push('--units=si');
-        arg.push('DEF:w=' + __dirname + '/hem-w.rrd:w:AVERAGE');
-        arg.push('LINE1:w#000000:Watts');
+      arg.push('DEF:w=' + __dirname + '/hem-w.rrd:w:AVERAGE');
+      arg.push('LINE1:w#000000:Watts');
       break;
     case 'temp':
       arg.push('DEF:rh=' + __dirname + '/hem-rh.rrd:rh:AVERAGE');
       arg.push('LINE1:rh#00ff00:Relative_Humidity');
       arg.push('DEF:dew=' + __dirname + '/hem-dew.rrd:dew:AVERAGE');
       arg.push('LINE1:dew#000000:Dew_Point');
-      arg.push('DEF:dew2=' + __dirname + '/hem-dew2.rrd:dew:AVERAGE');
-      arg.push('LINE1:dew2#ff00ff:Dew_Point');
+      arg.push('CDEF:smoothed=dew,1800,TREND');
+      arg.push('LINE1:smoothed#AA00AA:Dew_Point_Trend');
       arg.push('DEF:in=' + __dirname + '/hem-in.rrd:in:AVERAGE');
       arg.push('LINE1:in#0000ff:Inside');
       arg.push('DEF:out=' + __dirname + '/hem-out.rrd:out:AVERAGE');
@@ -203,7 +242,12 @@ function graph(req,res){
       break;
   }
   var child = spawn('rrdtool', arg);
-  child.on('error', function(){});
+  child.on('error', function(data){
+    console.error(data.toString());
+  });
+  child.stdout.on('data', function(data){
+    //console.log(data.toString());
+  });
   child.stdout.pipe(res);
 };
 app.get('/graph/:id', graph);
@@ -255,227 +299,21 @@ app.get('/chart/:grp/:time', function(req, res){
 
 app.use(express.static(__dirname + '/public'));
 
-//Dewostat functionality.
-
-var dewOn = 60;
-var dewOff = 57;
-var dewCur = 58;
-var dewStatus = "Off";a
-var lastTime = Date.now();
-
-eventEmitter.on('DEW', function(data){
-  dewCur=data;
-  if (dewCur >= dewOn && Date.now()-lastTime > 300000 ) {
-    dewStatus = "On";
-    sp.write('F');
-    setTimeout(function(){
-      sp.write('O');
-      sp.write('C');
-    },60000);
-    lastTime = Date.now();
-  };
-  if (dewCur <= dewOff && Date.now()-lastTime > 600000) {
-    dewStatus = "Off";
-    sp.write('c');
-    setTimeout(function(){
-      sp.write('f');
-      sp.write('o');
-    },180000);
-    lastTime = Date.now();
-  };
-  if (lastTime - Date.now()) {
-    
-  }
-});
-
-//Update database.
-var level = require('level');
-var leveldb = level( __dirname + '/hemdb');
-
-eventEmitter.on('W', function(data){
-  incCounter(leveldb,'HEM!kWh!15m!',time15m(),.002);
-  incCounter(leveldb,'HEM!kWh!60m!',time60m(),.002);
-  incCounter(leveldb,'HEM!kWh!24h!',time24h(),.002);
-  incCounter(leveldb,'HEM!kWh!28d!',time28d(),.002);
-  storeAvg(leveldb,'HEM!W!15m!',time15m(),data);
-  storeAvg(leveldb,'HEM!W!60m!',time60m(),data);
-  storeAvg(leveldb,'HEM!W!24h!',time24h(),data);
-
-  leveldb.get('HEM!kWh!28d!' + time28d(),function(err,value){
-    if (err) {
-      if (err.notFound) {
-        // handle a 'NotFoundError' here
-        socket.emit('kWh', 0);
-        return
-      }
-    // I/O or other error, pass it up the callback chain
-    return callback(err)
-    } else {
-      io.emit('kWh', JSON.parse(value)[1]);
-    }
-  });
-});
-
-eventEmitter.on('GPM',function(data){
-  incCounter(leveldb,'HEM!Gal!15m!',time15m(),.25);
-  incCounter(leveldb,'HEM!Gal!60m!',time60m(),.25);
-  incCounter(leveldb,'HEM!Gal!24h!',time24h(),.25);
-  incCounter(leveldb,'HEM!Gal!28d!',time28d(),.25);
-  storeAvg(leveldb,'HEM!GPM!15m!',time15m(),data);
-  storeAvg(leveldb,'HEM!GPM!60m!',time60m(),data);
-  storeAvg(leveldb,'HEM!GPM!24h!',time24h(),data);
-});
-
-eventEmitter.on('28955E3F03000045',function(data){
-  storeAvg(leveldb,'HEM!In!15m!',time15m(),data);
-  storeAvg(leveldb,'HEM!In!60m!',time60m(),data);
-  storeAvg(leveldb,'HEM!In!24h!',time24h(),data);
-});
-
-eventEmitter.on('289C653F03000027',function(data){
-  storeAvg(leveldb,'HEM!Out!15m!',time15m(),data);
-  storeAvg(leveldb,'HEM!Out!60m!',time60m(),data);
-  storeAvg(leveldb,'HEM!Out!24h!',time24h(),data);
-  storeAvg(leveldb,'HEM!Out!28d!',time28d(),data);
-});
-
-eventEmitter.on('2809853F030000A7',function(data){
-  storeAvg(leveldb,'HEM!Upper!15m!',time15m(),data);
-  storeAvg(leveldb,'HEM!Upper!60m!',time60m(),data);
-  storeAvg(leveldb,'HEM!Upper!24h!',time24h(),data);
-  storeAvg(leveldb,'HEM!Upper!28d!',time28d(),data);
-});
-
-eventEmitter.on('2813513F03000072',function(data){
-  storeAvg(leveldb,'HEM!Lower!15m!',time15m(),data);
-  storeAvg(leveldb,'HEM!Lower!60m!',time60m(),data);
-  storeAvg(leveldb,'HEM!Lower!24h!',time24h(),data);
-  storeAvg(leveldb,'HEM!Lower!28d!',time28d(),data);
-});
-
-
-//Time helper functions
-function time15m(){
-  return Math.floor((Date.now()/1000)/(15*60))*15*60*1000;
-}
-function time60m(){
-  return Math.floor((Date.now()/1000)/(60*60))*60*60*1000;
-}
-function time24h(){
-  return new Date(new Date().getFullYear(),new Date().getMonth(),new Date().getDate()).getTime();
-}
-function time28d(){
-  var month;
-  new Date().getDate() > 6 ? month = new Date().getMonth() : month = new Date().getMonth() - 1
-  return new Date(new Date().getFullYear(),month,7).getTime();
-}
-function time7dAgo(){
-  return Date.now()-7*24*60*60*1000;
-}
-function time1dAgo(){
-  return Date.now()-24*60*60*1000;
-}
-function time4hAgo(){
-  return Date.now()-4*60*60*1000;
-}
-
-//Leveldb helper functions
-
-//incCounter(leveldb,'HEM!kWh!',time15(),2);
-function incCounter(db,prefix,timeStamp,incValue){
-  db.get(prefix + timeStamp, function (err, value) {
-    if (err) {
-      if (err.notFound) {
-        // handle a 'NotFoundError' here
-        db.put(prefix + timeStamp, JSON.stringify([timeStamp,incValue]));
-        return
-      }
-      // I/O or other error, pass it up the callback chain
-      return callback(err)
-    }
-    // .. handle `value` here
-    var temp = Number((JSON.parse(value)[1] + incValue).toFixed(3));
-    db.put(prefix + timeStamp, JSON.stringify([timeStamp,temp]));
-  })
-}
-
-function storeAvg(db,prefix,timeStamp,value){
-  db.get(prefix + timeStamp, function (err, data) {
-    if (err) {
-      if (err.notFound) {
-        // handle a 'NotFoundError' here
-        //timestamp,min,count,culumative,max
-        db.put(prefix + timeStamp, JSON.stringify([timeStamp,value,1,value,value]));
-        return
-      }
-      // I/O or other error, pass it up the callback chain
-      return callback(err)
-    }
-    // .. handle `value` here
-    var min = JSON.parse(data)[1];
-    var count = JSON.parse(data)[2];
-    var sum = JSON.parse(data)[3];
-    var max = JSON.parse(data)[4];
-
-    min = Math.min(min,value);
-    max = Math.max(max,value);
-
-    count = count + 1;
-    sum = Number((sum + value).toFixed(2));
-
-    db.put(prefix + timeStamp, JSON.stringify([timeStamp,min,count,sum,max]));
-  })
-
-}
-
-//purgeDB(leveldb,'HEM!kWh!',time4hAgo());
-function purgeDB(db,prefix,timeStamp){
-  db.createReadStream({start:prefix,end:prefix+timeStamp,values:false})
-    .on('data',function(data){
-      db.del(data);
-    })
-}
-
-//
-function readDB(db,prefix,res){
-  var out = [];
-  db.createReadStream({keys:false, start:prefix,end:prefix+'\xff'})
-    .on('data',function(data){
-      out.push([JSON.parse(data)[0],JSON.parse(data)[1]]);
-    })
-    .on('close',function(){
-      res.send(out);
-    })
-}
-
-var nodemailer = require('nodemailer');
-
-// create reusable transporter object using SMTP transport
-var transporter = nodemailer.createTransport({
-    service: 'Gmail',
-    auth: {
-        user: 'kmitchel46725@gmail.com',
-        pass: 'mnt69dew'
-    }
-});
-
-// NB! No need to recreate the transporter object. You can use
-// the same transporter object for all e-mails
-
-// setup e-mail data with unicode symbols
-var mailOptions = {
-    from: 'Kenneth Mitchell <kmitchel46725@gmail.com>', // sender address
-    to: '2602298898@vtext.com', // list of receivers
-    subject: 'HEM', // Subject line
-//    text: 'Hello world ✔', // plaintext body
-//    html: '<b>Hello world ✔</b>' // html body
-};
-
-// send mail with defined transport object
-// transporter.sendMail(mailOptions, function(error, info){
-//     if(error){
-//         return console.log(error);
-//     }
-//     console.log('Message sent: ' + info.response);
-
-// });
+setInterval(function(){ 
+  helper.purgeDB(leveldb,'HEM!kWh!15m!',helper.time1dAgo());
+  helper.purgeDB(leveldb,'HEM!W!15m!',helper.time1dAgo());
+  helper.purgeDB(leveldb,'HEM!Gal!15m!',helper.time1dAgo());
+  helper.purgeDB(leveldb,'HEM!GPM!15m!',helper.time1dAgo());
+  helper.purgeDB(leveldb,'HEM!In!15m!',helper.time1dAgo());
+  helper.purgeDB(leveldb,'HEM!Out!15m!',helper.time1dAgo());
+  helper.purgeDB(leveldb,'HEM!Upper!15m!',helper.time1dAgo());
+  helper.purgeDB(leveldb,'HEM!Lower!15m!',helper.time1dAgo());
+  helper.purgeDB(leveldb,'HEM!kWh!60m!',helper.time7dAgo());
+  helper.purgeDB(leveldb,'HEM!W!60m!',helper.time7dAgo());
+  helper.purgeDB(leveldb,'HEM!Gal!60m!',helper.time7dAgo());
+  helper.purgeDB(leveldb,'HEM!GPM!60m!',helper.time7dAgo());
+  helper.purgeDB(leveldb,'HEM!In!60m!',helper.time7dAgo());
+  helper.purgeDB(leveldb,'HEM!Out!60m!',helper.time7dAgo());
+  helper.purgeDB(leveldb,'HEM!Upper!60m!',helper.time7dAgo());
+  helper.purgeDB(leveldb,'HEM!Lower!60m!',helper.time7dAgo());
+},3600000);
