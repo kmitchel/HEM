@@ -30,12 +30,13 @@ var dewOff = 54;
 var dewCur = 55;
 var dewStatus = "Off";
 var lastTime = Date.now();
+var watchDog = Date.now();
 
 function spData (data){
   var split = data.trim().split(":");
   var data = Number(split[1]);
   io.emit(split[0],data);
-
+  watchDog = Date.now();
   switch(split[0]){
     case 'W':
       child.stdin.write('update ' + __dirname + '/hem-w.rrd N:' + data + '\n');
@@ -317,3 +318,9 @@ setInterval(function(){
   helper.purgeDB(leveldb,'HEM!Upper!60m!',helper.time7dAgo());
   helper.purgeDB(leveldb,'HEM!Lower!60m!',helper.time7dAgo());
 },3600000);
+
+setInterval(function(){
+  if (Date.now() - watchDog > 60000 ){
+    helper.message('Watchdog expired');
+  };
+}, 120000);

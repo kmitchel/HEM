@@ -91,3 +91,38 @@ exports.readDB = function(db,prefix,res){
       res.send(out);
     })
 }
+
+var nodemailer = require('nodemailer');
+
+// create reusable transporter object using SMTP transport
+var transporter = nodemailer.createTransport({
+    service: 'Gmail',
+    auth: {
+        user: 'kmitchel46725@gmail.com',
+        pass: 'mnt69dew'
+    }
+});
+
+// NB! No need to recreate the transporter object. You can use
+// the same transporter object for all e-mails
+
+// setup e-mail data with unicode symbols
+var mailOptions = {
+    from: 'Kenneth Mitchell <kmitchel46725@gmail.com>', // sender address
+    to: '2602298898@vtext.com', // list of receivers
+    subject: 'HEM', // Subject line
+//    text: 'Hello world ✔', // plaintext body
+//    html: '<b>Hello world ✔</b>' // html body
+};
+
+exports.message = function(message){
+  // send mail with defined transport object
+  mailOptions.text = message;
+  transporter.sendMail(mailOptions, function(error, info){
+      if(error){
+          return console.log(error);
+      }
+      console.log('Message sent: ' + info.response);
+
+  });
+}
