@@ -1,11 +1,17 @@
 //Connect serial port. Emit incoming data.
-var serialport = require('serialport');
-var serialPort = serialport.SerialPort;
+//var serialport = require('serialport');
+//var serialPort = serialport.SerialPort;
 
-var sp = new serialPort('/dev/arduino',{
-  baudrate: 57600,
-  parser: serialport.parsers.readline('\r\n')
-});
+//var sp = new serialPort('/dev/arduino',{
+//  baudrate: 57600,
+//  parser: serialport.parsers.readline('\r\n')
+//});
+
+
+var fs = require('fs');
+var split = require('split');
+
+var sp = fs.createReadStream('/dev/arduino', {encoding: 'utf8'}).pipe(split());
 
 //Update database.
 var level = require('level');
@@ -31,14 +37,15 @@ var dewCur = 55;
 var dewStatus = "Off";
 var lastTime = Date.now();
 var watchDog = Date.now();
+var watchDogCount = 0;
 
 function spData (data){
   var split = data.trim().split(":");
   var data = Number(split[1]);
   io.emit(split[0],data);
-  watchDog = Date.now();
   switch(split[0]){
     case 'W':
+      watchDog = Date.now();
       child.stdin.write('update ' + __dirname + '/hem-w.rrd N:' + data + '\n');
       helper.incCounter(leveldb,'HEM!kWh!15m!',helper.time15m(),.002);
       helper.incCounter(leveldb,'HEM!kWh!60m!',helper.time60m(),.002);
@@ -141,6 +148,10 @@ function spData (data){
 
 };
 sp.on('data', spData);
+
+sp.on('error', function(data){
+  console.error(data.toString());
+});
 
 //Webserver
 var express = require('express');
@@ -322,5 +333,9 @@ setInterval(function(){
 setInterval(function(){
   if (Date.now() - watchDog > 60000 ){
     helper.message('Watchdog expired');
+    watchDogCount += 1;
   };
+  if (watchDogCount > 3) {
+    process.exit(1);
+  }
 }, 120000);

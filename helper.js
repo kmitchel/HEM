@@ -122,7 +122,5 @@ exports.message = function(message){
       if(error){
           return console.log(error);
       }
-      console.log('Message sent: ' + info.response);
-
   });
 }
