@@ -1,13 +1,4 @@
 //Connect serial port. Emit incoming data.
-//var serialport = require('serialport');
-//var serialPort = serialport.SerialPort;
-
-//var sp = new serialPort('/dev/arduino',{
-//  baudrate: 57600,
-//  parser: serialport.parsers.readline('\r\n')
-//});
-
-
 var fs = require('fs');
 var split = require('split');
 
@@ -335,7 +326,7 @@ setInterval(function(){
     helper.message('Watchdog expired');
     watchDogCount += 1;
   };
-  if (watchDogCount > 3) {
+  if (watchDogCount > 2) {
     process.exit(1);
   }
-}, 120000);
+}, 300000);
