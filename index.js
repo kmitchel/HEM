@@ -72,7 +72,8 @@ function spData(rxData){
       break;
 
     case 'T':
-      child.stdin.write('update ' + __dirname + '/hem-in.rrd N:' + data + '\n');
+      child.stdin.write('update ' + __dirname + '/hem-in.rrd N:' + 
+        data + '\n');
       helper.storeAvg(leveldb, 'HEM!In!15m!', helper.time15m(), data);
       helper.storeAvg(leveldb, 'HEM!In!60m!', helper.time60m(), data);
       helper.storeAvg(leveldb, 'HEM!In!24h!', helper.time24h(), data);
@@ -80,7 +81,8 @@ function spData(rxData){
       break;
 
     case '289C653F03000027':
-      child.stdin.write('update ' + __dirname + '/hem-out.rrd N:' + data + '\n');
+      child.stdin.write('update ' + __dirname + '/hem-out.rrd N:' + 
+        data + '\n');
       helper.storeAvg(leveldb, 'HEM!Out!15m!', helper.time15m(), data);
       helper.storeAvg(leveldb, 'HEM!Out!60m!', helper.time60m(), data);
       helper.storeAvg(leveldb, 'HEM!Out!24h!', helper.time24h(), data);
@@ -88,7 +90,8 @@ function spData(rxData){
       break;
 
     case 'DEW':
-      child.stdin.write('update ' + __dirname + '/hem-dew.rrd N:' + data + '\n');
+      child.stdin.write('update ' + __dirname + '/hem-dew.rrd N:' + 
+        sdata + '\n');
       dewCur=data;
       if (dewCur >= dewOn && Date.now()-lastTime > 300000 ) {
         dewStatus = 'On';
@@ -107,11 +110,13 @@ function spData(rxData){
       break;
 
     case 'RH':
-      child.stdin.write('update ' + __dirname + '/hem-rh.rrd N:' + data + '\n');
+      child.stdin.write('update ' + __dirname + '/hem-rh.rrd N:' + 
+        data + '\n');
       break;
 
     case '2809853F030000A7':
-      child.stdin.write('update ' + __dirname + '/hem-upper.rrd N:' + data + '\n');
+      child.stdin.write('update ' + __dirname + '/hem-upper.rrd N:' + 
+        data + '\n');
       helper.storeAvg(leveldb, 'HEM!Upper!15m!', helper.time15m(), data);
       helper.storeAvg(leveldb, 'HEM!Upper!60m!', helper.time60m(), data);
       helper.storeAvg(leveldb, 'HEM!Upper!24h!', helper.time24h(), data);
@@ -119,7 +124,8 @@ function spData(rxData){
       break;
 
     case '2813513F03000072':
-      child.stdin.write('update ' + __dirname + '/hem-lower.rrd N:' + data + '\n');
+      child.stdin.write('update ' + __dirname + '/hem-lower.rrd N:' + 
+        data + '\n');
       helper.storeAvg(leveldb, 'HEM!Lower!15m!', helper.time15m(), data);
       helper.storeAvg(leveldb, 'HEM!Lower!60m!', helper.time60m(), data);
       helper.storeAvg(leveldb, 'HEM!Lower!24h!', helper.time24h(), data);
@@ -127,15 +133,18 @@ function spData(rxData){
       break;
 
     case '2823583F0300006C':
-      child.stdin.write('update ' + __dirname + '/hem-achigh.rrd N:' + data + '\n');
+      child.stdin.write('update ' + __dirname + '/hem-achigh.rrd N:' + 
+        data + '\n');
       break;
 
     case '28AE3A3F0300005E':
-      child.stdin.write('update ' + __dirname + '/hem-aclow.rrd N:' + data + '\n');
+      child.stdin.write('update ' + __dirname + '/hem-aclow.rrd N:' + 
+        data + '\n');
       break;
 
     case 'GPM':
-      child.stdin.write('update ' + __dirname + '/hem-gpm.rrd N:' + data + '\n');
+      child.stdin.write('update ' + __dirname + '/hem-gpm.rrd N:' + 
+        data + '\n');
       helper.incCounter(leveldb, 'HEM!Gal!15m!', helper.time15m(), 0.25);
       helper.incCounter(leveldb, 'HEM!Gal!60m!', helper.time60m(), 0.25);
       helper.incCounter(leveldb, 'HEM!Gal!24h!', helper.time24h(), 0.25);
@@ -197,19 +206,37 @@ function graph(req, res){
       case '24h':
         arg.push('-s');
         arg.push('now-24hour');
-        arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(now.getDate() - 1), 41.1660, -85.4831).sunrise.getTime()/1000) + '#FFA500');
-        arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(now.getDate() - 1), 41.1660, -85.4831).solarNoon.getTime()/1000) + '#ff0000');
-        arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(now.getDate() - 1), 41.1660, -85.4831).sunset.getTime()/1000) + '#00a5ff');
+        arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(
+          now.getDate() - 1), 41.1660, -85.4831).sunrise.getTime()/1000) + 
+          '#FFA500');
+        arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(
+          now.getDate() - 1), 41.1660, -85.4831).solarNoon.getTime()/1000) + 
+          '#ff0000');
+        arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(
+          now.getDate() - 1), 41.1660, -85.4831).sunset.getTime()/1000) + 
+          '#00a5ff');
         break;
       case '48h':
         arg.push('-s');
         arg.push('now-48hour');
-        arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(now.getDate() - 1), 41.1660, -85.4831).sunrise.getTime()/1000) + '#FFA500');
-        arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(now.getDate() - 1), 41.1660, -85.4831).solarNoon.getTime()/1000) + '#ff0000');
-        arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(now.getDate() - 1), 41.1660, -85.4831).sunset.getTime()/1000) + '#00a5ff');
-        arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(now.getDate() - 2), 41.1660, -85.4831).sunrise.getTime()/1000) + '#FFA500');
-        arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(now.getDate() - 2), 41.1660, -85.4831).solarNoon.getTime()/1000) + '#ff0000');
-        arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(now.getDate() - 2), 41.1660, -85.4831).sunset.getTime()/1000) + '#00a5ff');
+        arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(
+          now.getDate() - 1), 41.1660, -85.4831).sunrise.getTime()/1000) + 
+          '#FFA500');
+        arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(
+          now.getDate() - 1), 41.1660, -85.4831).solarNoon.getTime()/1000) + 
+          '#ff0000');
+        arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(
+          now.getDate() - 1), 41.1660, -85.4831).sunset.getTime()/1000) + 
+          '#00a5ff');
+        arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(
+          now.getDate() - 2), 41.1660, -85.4831).sunrise.getTime()/1000) + 
+          '#FFA500');
+        arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(
+          now.getDate() - 2), 41.1660, -85.4831).solarNoon.getTime()/1000) + 
+          '#ff0000');
+        arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(
+          now.getDate() - 2), 41.1660, -85.4831).sunset.getTime()/1000) + 
+          '#00a5ff');
         break;
     }
   }
@@ -270,7 +297,8 @@ app.get('/dewstatus', function (req, res){
     dewOff=Number(req.query.off);
   }
 
-  var obj = {dewpoint:dewCur, on:dewOn, off:dewOff, state:dewStatus, time:min + ':' + sec};
+  var obj = {dewpoint:dewCur, on:dewOn, off:dewOff, state:dewStatus, 
+    time:min + ':' + sec};
   res.send(obj);
 });
 
@@ -296,7 +324,8 @@ app.get('/chart/:grp/:time', function (req, res){
   var out = [];
   var grp = grpmap[req.params.grp];
   var time = timemap[req.params.time];
-  leveldb.createReadStream({start:'HEM!' + grp + '!' + time + '!', end:'HEM!' + grp + '!' + time + '!\xff', keys: false})
+  leveldb.createReadStream({start:'HEM!' + grp + '!' + time + '!', 
+    end:'HEM!' + grp + '!' + time + '!\xff', keys: false})
     .on('data', function (data){
       out.push(JSON.parse(data));
     })
@@ -316,6 +345,9 @@ setInterval(function (){
   helper.purgeDB(leveldb, 'HEM!Out!15m!', helper.time1dAgo());
   helper.purgeDB(leveldb, 'HEM!Upper!15m!', helper.time1dAgo());
   helper.purgeDB(leveldb, 'HEM!Lower!15m!', helper.time1dAgo());
+}, 3600000);
+
+setInterval(function (){ 
   helper.purgeDB(leveldb, 'HEM!kWh!60m!', helper.time7dAgo());
   helper.purgeDB(leveldb, 'HEM!W!60m!', helper.time7dAgo());
   helper.purgeDB(leveldb, 'HEM!Gal!60m!', helper.time7dAgo());
