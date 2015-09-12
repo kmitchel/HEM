@@ -36,3 +36,10 @@
 2015/09/12-04:12:42.185917 b2effb40 Level-0 table #6447: started
 2015/09/12-04:12:42.478571 b2effb40 Level-0 table #6447: 789971 bytes OK
 2015/09/12-04:12:42.541690 b2effb40 Delete type=0 #6443
+2015/09/12-07:00:28.437949 b2effb40 Compacting 1@1 + 1@2 files
+2015/09/12-07:00:29.227817 b2effb40 Generated table #6448: 140622 keys, 2307815 bytes
+2015/09/12-07:00:29.349528 b2effb40 Generated table #6449: 17711 keys, 174750 bytes
+2015/09/12-07:00:29.349595 b2effb40 Compacted 1@1 + 1@2 files => 2482565 bytes
+2015/09/12-07:00:29.427172 b2effb40 compacted to: files[ 0 0 2 0 0 0 0 ]
+2015/09/12-07:00:29.427501 b2effb40 Delete type=2 #6447
+2015/09/12-07:00:29.428107 b2effb40 Delete type=2 #6445

@@ -2,30 +2,31 @@
 var fs = require('fs');
 var split = require('split');
 
-var spRead = fs.createReadStream('/dev/arduino', {encoding: 'ascii'}).pipe(split());
+var spRead = fs.createReadStream('/dev/arduino', {encoding: 'ascii'})
+  .pipe(split());
 var spWrite = fs.createWriteStream('/dev/arduino');
 
-spRead.on('error', function(data){
+spRead.on('error', function (data){
   console.log(data.toString());
 });
 
-spWrite.on('error', function(data){
+spWrite.on('error', function (data){
   console.log(data.toString());
 });
 
 //Update database.
 var level = require('level');
-var leveldb = level( __dirname + '/hemdb');
+var leveldb = level(__dirname + '/hemdb');
 
 //Spawn rrdtool child process. Update RRD files.
 var spawn = require('child_process').spawn;
 var child = spawn('rrdtool', ['-']);
 
-child.stdout.on('data', function(data){
+child.stdout.on('data', function (data){
   //console.log(data.toString());
 });
 
-child.stderr.on('data', function(data){
+child.stderr.on('data', function (data){
   console.error(data.toString());
 });
 
@@ -34,28 +35,28 @@ var helper = require('./helper.js');
 var dewOn = 56;
 var dewOff = 54;
 var dewCur = 55;
-var dewStatus = "Off";
+var dewStatus = 'Off';
 var lastTime = Date.now();
 var watchDog = Date.now();
 var watchDogCount = 0;
 
-function spData (rxData){
-  var split = rxData.trim().split(":");
+function spData(rxData){
+  var split = rxData.trim().split(':');
   var data = Number(split[1]);
-  io.emit(split[0],data);
+  io.emit(split[0], data);
   switch(split[0]){
     case 'W':
       watchDog = Date.now();
       child.stdin.write('update ' + __dirname + '/hem-w.rrd N:' + data + '\n');
-      helper.incCounter(leveldb,'HEM!kWh!15m!',helper.time15m(),0.002);
-      helper.incCounter(leveldb,'HEM!kWh!60m!',helper.time60m(),0.002);
-      helper.incCounter(leveldb,'HEM!kWh!24h!',helper.time24h(),0.002);
-      helper.incCounter(leveldb,'HEM!kWh!28d!',helper.time28d(),0.002);
-      helper.storeAvg(leveldb,'HEM!W!15m!',helper.time15m(),data);
-      helper.storeAvg(leveldb,'HEM!W!60m!',helper.time60m(),data);
-      helper.storeAvg(leveldb,'HEM!W!24h!',helper.time24h(),data);
-      helper.storeAvg(leveldb,'HEM!W!28d!',helper.time28d(),data);
-      leveldb.get('HEM!kWh!28d!' + helper.time28d(),function(err,value){
+      helper.incCounter(leveldb, 'HEM!kWh!15m!', helper.time15m(), 0.002);
+      helper.incCounter(leveldb, 'HEM!kWh!60m!', helper.time60m(), 0.002);
+      helper.incCounter(leveldb, 'HEM!kWh!24h!', helper.time24h(), 0.002);
+      helper.incCounter(leveldb, 'HEM!kWh!28d!', helper.time28d(), 0.002);
+      helper.storeAvg(leveldb, 'HEM!W!15m!', helper.time15m(), data);
+      helper.storeAvg(leveldb, 'HEM!W!60m!', helper.time60m(), data);
+      helper.storeAvg(leveldb, 'HEM!W!24h!', helper.time24h(), data);
+      helper.storeAvg(leveldb, 'HEM!W!28d!', helper.time28d(), data);
+      leveldb.get('HEM!kWh!28d!' + helper.time28d(), function (err, value){
         if (err) {
           if (err.notFound) {
             // handle a 'NotFoundError' here
@@ -72,32 +73,32 @@ function spData (rxData){
 
     case 'T':
       child.stdin.write('update ' + __dirname + '/hem-in.rrd N:' + data + '\n');
-      helper.storeAvg(leveldb,'HEM!In!15m!',helper.time15m(),data);
-      helper.storeAvg(leveldb,'HEM!In!60m!',helper.time60m(),data);
-      helper.storeAvg(leveldb,'HEM!In!24h!',helper.time24h(),data);
-      helper.storeAvg(leveldb,'HEM!In!28d!',helper.time28d(),data);
+      helper.storeAvg(leveldb, 'HEM!In!15m!', helper.time15m(), data);
+      helper.storeAvg(leveldb, 'HEM!In!60m!', helper.time60m(), data);
+      helper.storeAvg(leveldb, 'HEM!In!24h!', helper.time24h(), data);
+      helper.storeAvg(leveldb, 'HEM!In!28d!', helper.time28d(), data);
       break;
 
     case '289C653F03000027':
       child.stdin.write('update ' + __dirname + '/hem-out.rrd N:' + data + '\n');
-      helper.storeAvg(leveldb,'HEM!Out!15m!',helper.time15m(),data);
-      helper.storeAvg(leveldb,'HEM!Out!60m!',helper.time60m(),data);
-      helper.storeAvg(leveldb,'HEM!Out!24h!',helper.time24h(),data);
-      helper.storeAvg(leveldb,'HEM!Out!28d!',helper.time28d(),data);
+      helper.storeAvg(leveldb, 'HEM!Out!15m!', helper.time15m(), data);
+      helper.storeAvg(leveldb, 'HEM!Out!60m!', helper.time60m(), data);
+      helper.storeAvg(leveldb, 'HEM!Out!24h!', helper.time24h(), data);
+      helper.storeAvg(leveldb, 'HEM!Out!28d!', helper.time28d(), data);
       break;
 
     case 'DEW':
       child.stdin.write('update ' + __dirname + '/hem-dew.rrd N:' + data + '\n');
       dewCur=data;
       if (dewCur >= dewOn && Date.now()-lastTime > 300000 ) {
-        dewStatus = "On";
+        dewStatus = 'On';
         spWrite.write('F');
         spWrite.write('C');
         spWrite.write('O');
         lastTime = Date.now();
       }
       if (dewCur <= dewOff && Date.now()-lastTime > 600000) {
-        dewStatus = "Off";
+        dewStatus = 'Off';
         spWrite.write('o');
         spWrite.write('c');
         spWrite.write('f');
@@ -111,18 +112,18 @@ function spData (rxData){
 
     case '2809853F030000A7':
       child.stdin.write('update ' + __dirname + '/hem-upper.rrd N:' + data + '\n');
-      helper.storeAvg(leveldb,'HEM!Upper!15m!',helper.time15m(),data);
-      helper.storeAvg(leveldb,'HEM!Upper!60m!',helper.time60m(),data);
-      helper.storeAvg(leveldb,'HEM!Upper!24h!',helper.time24h(),data);
-      helper.storeAvg(leveldb,'HEM!Upper!28d!',helper.time28d(),data);
+      helper.storeAvg(leveldb, 'HEM!Upper!15m!', helper.time15m(), data);
+      helper.storeAvg(leveldb, 'HEM!Upper!60m!', helper.time60m(), data);
+      helper.storeAvg(leveldb, 'HEM!Upper!24h!', helper.time24h(), data);
+      helper.storeAvg(leveldb, 'HEM!Upper!28d!', helper.time28d(), data);
       break;
 
     case '2813513F03000072':
       child.stdin.write('update ' + __dirname + '/hem-lower.rrd N:' + data + '\n');
-      helper.storeAvg(leveldb,'HEM!Lower!15m!',helper.time15m(),data);
-      helper.storeAvg(leveldb,'HEM!Lower!60m!',helper.time60m(),data);
-      helper.storeAvg(leveldb,'HEM!Lower!24h!',helper.time24h(),data);
-      helper.storeAvg(leveldb,'HEM!Lower!28d!',helper.time28d(),data);
+      helper.storeAvg(leveldb, 'HEM!Lower!15m!', helper.time15m(), data);
+      helper.storeAvg(leveldb, 'HEM!Lower!60m!', helper.time60m(), data);
+      helper.storeAvg(leveldb, 'HEM!Lower!24h!', helper.time24h(), data);
+      helper.storeAvg(leveldb, 'HEM!Lower!28d!', helper.time28d(), data);
       break;
 
     case '2823583F0300006C':
@@ -135,14 +136,14 @@ function spData (rxData){
 
     case 'GPM':
       child.stdin.write('update ' + __dirname + '/hem-gpm.rrd N:' + data + '\n');
-      helper.incCounter(leveldb,'HEM!Gal!15m!',helper.time15m(),0.25);
-      helper.incCounter(leveldb,'HEM!Gal!60m!',helper.time60m(),0.25);
-      helper.incCounter(leveldb,'HEM!Gal!24h!',helper.time24h(),0.25);
-      helper.incCounter(leveldb,'HEM!Gal!28d!',helper.time28d(),0.25);
-      helper.storeAvg(leveldb,'HEM!GPM!15m!',helper.time15m(),data);
-      helper.storeAvg(leveldb,'HEM!GPM!60m!',helper.time60m(),data);
-      helper.storeAvg(leveldb,'HEM!GPM!24h!',helper.time24h(),data);
-      helper.storeAvg(leveldb,'HEM!GPM!28d!',helper.time28d(),data);
+      helper.incCounter(leveldb, 'HEM!Gal!15m!', helper.time15m(), 0.25);
+      helper.incCounter(leveldb, 'HEM!Gal!60m!', helper.time60m(), 0.25);
+      helper.incCounter(leveldb, 'HEM!Gal!24h!', helper.time24h(), 0.25);
+      helper.incCounter(leveldb, 'HEM!Gal!28d!', helper.time28d(), 0.25);
+      helper.storeAvg(leveldb, 'HEM!GPM!15m!', helper.time15m(), data);
+      helper.storeAvg(leveldb, 'HEM!GPM!60m!', helper.time60m(), data);
+      helper.storeAvg(leveldb, 'HEM!GPM!24h!', helper.time24h(), data);
+      helper.storeAvg(leveldb, 'HEM!GPM!28d!', helper.time28d(), data);
       break;
   }
 }
@@ -160,9 +161,9 @@ server.listen(80);
 var spawn = require('child_process').spawn;
 var SunCalc = require('suncalc');
 
-function graph(req,res){
+function graph(req, res){
   res.setHeader('Content-Type', 'image/png');
-  var arg = ['graph','-','-a','PNG','-w','1080','-h','240'];
+  var arg = ['graph', '-', '-a', 'PNG', '-w', '1080', '-h', '240'];
 
   var times = SunCalc.getTimes(new Date(), 41.1660, -85.4831);
   
@@ -224,7 +225,7 @@ function graph(req,res){
       arg.push('LINE1:rh#00ff00:Relative_Humidity');
       arg.push('DEF:dew=' + __dirname + '/hem-dew.rrd:dew:AVERAGE');
       arg.push('LINE1:dew#000000:Dew_Point');
-      arg.push('CDEF:smoothed=dew,1800,TREND');
+      arg.push('CDEF:smoothed=dew, 1800, TREND');
       arg.push('LINE1:smoothed#AA00AA:Dew_Point_Trend');
       arg.push('DEF:in=' + __dirname + '/hem-in.rrd:in:AVERAGE');
       arg.push('LINE1:in#0000ff:Inside');
@@ -249,17 +250,17 @@ function graph(req,res){
       break;
   }
   var child = spawn('rrdtool', arg);
-  child.on('error', function(data){
+  child.on('error', function (data){
     console.error(data.toString());
   });
-  child.stdout.on('data', function(data){
+  child.stdout.on('data', function (data){
     //console.log(data.toString());
   });
   child.stdout.pipe(res);
 }
 app.get('/graph/:id', graph);
 
-app.get('/dewstatus', function(req, res){
+app.get('/dewstatus', function (req, res){
   var temp = Math.round((Date.now()-lastTime)/1000);
   var min = Math.floor(temp/60);
   var sec = temp % 60;
@@ -291,41 +292,41 @@ var timemap=[];
   timemap['24h']='24h';
   timemap['28d']='28d';
 
-app.get('/chart/:grp/:time', function(req, res){
+app.get('/chart/:grp/:time', function (req, res){
   var out = [];
   var grp = grpmap[req.params.grp];
   var time = timemap[req.params.time];
   leveldb.createReadStream({start:'HEM!' + grp + '!' + time + '!', end:'HEM!' + grp + '!' + time + '!\xff', keys: false})
-    .on('data',function(data){
+    .on('data', function (data){
       out.push(JSON.parse(data));
     })
-    .on('close',function(){
+    .on('close', function (){
       res.jsonp(out);
     });
 });
 
 app.use(express.static(__dirname + '/public'));
 
-setInterval(function(){ 
-  helper.purgeDB(leveldb,'HEM!kWh!15m!',helper.time1dAgo());
-  helper.purgeDB(leveldb,'HEM!W!15m!',helper.time1dAgo());
-  helper.purgeDB(leveldb,'HEM!Gal!15m!',helper.time1dAgo());
-  helper.purgeDB(leveldb,'HEM!GPM!15m!',helper.time1dAgo());
-  helper.purgeDB(leveldb,'HEM!In!15m!',helper.time1dAgo());
-  helper.purgeDB(leveldb,'HEM!Out!15m!',helper.time1dAgo());
-  helper.purgeDB(leveldb,'HEM!Upper!15m!',helper.time1dAgo());
-  helper.purgeDB(leveldb,'HEM!Lower!15m!',helper.time1dAgo());
-  helper.purgeDB(leveldb,'HEM!kWh!60m!',helper.time7dAgo());
-  helper.purgeDB(leveldb,'HEM!W!60m!',helper.time7dAgo());
-  helper.purgeDB(leveldb,'HEM!Gal!60m!',helper.time7dAgo());
-  helper.purgeDB(leveldb,'HEM!GPM!60m!',helper.time7dAgo());
-  helper.purgeDB(leveldb,'HEM!In!60m!',helper.time7dAgo());
-  helper.purgeDB(leveldb,'HEM!Out!60m!',helper.time7dAgo());
-  helper.purgeDB(leveldb,'HEM!Upper!60m!',helper.time7dAgo());
-  helper.purgeDB(leveldb,'HEM!Lower!60m!',helper.time7dAgo());
-},3600000);
+setInterval(function (){ 
+  helper.purgeDB(leveldb, 'HEM!kWh!15m!', helper.time1dAgo());
+  helper.purgeDB(leveldb, 'HEM!W!15m!', helper.time1dAgo());
+  helper.purgeDB(leveldb, 'HEM!Gal!15m!', helper.time1dAgo());
+  helper.purgeDB(leveldb, 'HEM!GPM!15m!', helper.time1dAgo());
+  helper.purgeDB(leveldb, 'HEM!In!15m!', helper.time1dAgo());
+  helper.purgeDB(leveldb, 'HEM!Out!15m!', helper.time1dAgo());
+  helper.purgeDB(leveldb, 'HEM!Upper!15m!', helper.time1dAgo());
+  helper.purgeDB(leveldb, 'HEM!Lower!15m!', helper.time1dAgo());
+  helper.purgeDB(leveldb, 'HEM!kWh!60m!', helper.time7dAgo());
+  helper.purgeDB(leveldb, 'HEM!W!60m!', helper.time7dAgo());
+  helper.purgeDB(leveldb, 'HEM!Gal!60m!', helper.time7dAgo());
+  helper.purgeDB(leveldb, 'HEM!GPM!60m!', helper.time7dAgo());
+  helper.purgeDB(leveldb, 'HEM!In!60m!', helper.time7dAgo());
+  helper.purgeDB(leveldb, 'HEM!Out!60m!', helper.time7dAgo());
+  helper.purgeDB(leveldb, 'HEM!Upper!60m!', helper.time7dAgo());
+  helper.purgeDB(leveldb, 'HEM!Lower!60m!', helper.time7dAgo());
+}, 3600000);
 
-setInterval(function(){
+setInterval(function (){
   if (Date.now() - watchDog > 60000 ){
     helper.message('Watchdog expired');
     watchDogCount += 1;
