@@ -1,27 +1,31 @@
 //Time helper functions
 exports.time15m = function(){
   return Math.floor((Date.now()/1000)/(15*60))*15*60*1000;
-}
+};
 exports.time60m = function(){
   return Math.floor((Date.now()/1000)/(60*60))*60*60*1000;
-}
+};
 exports.time24h = function(){
   return new Date(new Date().getFullYear(),new Date().getMonth(),new Date().getDate()).getTime();
-}
+};
 exports.time28d = function(){
   var month;
-  new Date().getDate() > 6 ? month = new Date().getMonth() : month = new Date().getMonth() - 1
+  if (Date().getDate() > 6){
+    month = new Date().getMonth();
+  } else {
+    month = new Date().getMonth() - 1;
+  }
   return new Date(new Date().getFullYear(),month,7).getTime();
-}
+};
 exports.time7dAgo = function(){
   return Date.now()-7*24*60*60*1000;
-}
+};
 exports.time1dAgo = function(){
   return Date.now()-24*60*60*1000;
-}
+};
 exports.time4hAgo = function(){
   return Date.now()-4*60*60*1000;
-}
+};
 
 //Leveldb helper functions
 
@@ -32,16 +36,16 @@ exports.incCounter = function(db,prefix,timeStamp,incValue){
       if (err.notFound) {
         // handle a 'NotFoundError' here
         db.put(prefix + timeStamp, JSON.stringify([timeStamp,incValue]));
-        return
+        return;
       }
       // I/O or other error, pass it up the callback chain
-      return callback(err)
+      return callback(err);
     }
     // .. handle `value` here
     var temp = Number((JSON.parse(value)[1] + incValue).toFixed(3));
     db.put(prefix + timeStamp, JSON.stringify([timeStamp,temp]));
-  })
-}
+  });
+};
 
 exports.storeAvg = function(db,prefix,timeStamp,value){
   db.get(prefix + timeStamp, function (err, data) {
@@ -50,10 +54,10 @@ exports.storeAvg = function(db,prefix,timeStamp,value){
         // handle a 'NotFoundError' here
         //timestamp,min,count,culumative,max
         db.put(prefix + timeStamp, JSON.stringify([timeStamp,value,1,value,value]));
-        return
+        return;
       }
       // I/O or other error, pass it up the callback chain
-      return callback(err)
+      return callback(err);
     }
     // .. handle `value` here
     var min = JSON.parse(data)[1];
@@ -68,17 +72,16 @@ exports.storeAvg = function(db,prefix,timeStamp,value){
     sum = Number((sum + value).toFixed(2));
 
     db.put(prefix + timeStamp, JSON.stringify([timeStamp,min,count,sum,max]));
-  })
-
-}
+  });
+};
 
 //purgeDB(leveldb,'HEM!kWh!',time4hAgo());
 exports.purgeDB = function(db,prefix,timeStamp){
   db.createReadStream({start:prefix,end:prefix+timeStamp,values:false})
     .on('data',function(data){
       db.del(data);
-    })
-}
+    });
+};
 
 //
 exports.readDB = function(db,prefix,res){
@@ -89,8 +92,8 @@ exports.readDB = function(db,prefix,res){
     })
     .on('close',function(){
       res.send(out);
-    })
-}
+    });
+};
 
 var nodemailer = require('nodemailer');
 
@@ -123,4 +126,4 @@ exports.message = function(message){
           return console.log(error);
       }
   });
-}
+};

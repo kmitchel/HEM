@@ -81,11 +81,21 @@
   <script src="/socket.io/socket.io.js"></script>
 <script>
 $(function(){
+
+    function time(){
+      return Math.floor(Date.now()/1000/30)*60*1000;
+    }
+
     var on=0, off=0;
     var iosocket = io.connect();
     iosocket.on('connect', function(){
       iosocket.on('DEW', function(message){
         $('#dew').html('Dew Point: ' + message + 'F');
+        $.getJSON('/dewstatus?' + time(),function(data){
+          $('#status').html('AC is ' + data.state + ' for ' + data.time + '<br>AC on at Dew Point of ' + data.on + 'F<br>AC off at Dew Point of ' + data.off + 'F' );
+          on=data.on;
+          off=data.off;
+        });
       });
       iosocket.on('RH', function(message){
         $('#rh').html('Humidity: ' + message + '%');

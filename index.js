@@ -2,7 +2,16 @@
 var fs = require('fs');
 var split = require('split');
 
-var sp = fs.createReadStream('/dev/arduino', {encoding: 'utf8'}).pipe(split());
+var spRead = fs.createReadStream('/dev/arduino', {encoding: 'ascii'}).pipe(split());
+var spWrite = fs.createWriteStream('/dev/arduino');
+
+spRead.on('error', function(data){
+  console.log(data.toString());
+});
+
+spWrite.on('error', function(data){
+  console.log(data.toString());
+});
 
 //Update database.
 var level = require('level');
@@ -30,18 +39,18 @@ var lastTime = Date.now();
 var watchDog = Date.now();
 var watchDogCount = 0;
 
-function spData (data){
-  var split = data.trim().split(":");
+function spData (rxData){
+  var split = rxData.trim().split(":");
   var data = Number(split[1]);
   io.emit(split[0],data);
   switch(split[0]){
     case 'W':
       watchDog = Date.now();
       child.stdin.write('update ' + __dirname + '/hem-w.rrd N:' + data + '\n');
-      helper.incCounter(leveldb,'HEM!kWh!15m!',helper.time15m(),.002);
-      helper.incCounter(leveldb,'HEM!kWh!60m!',helper.time60m(),.002);
-      helper.incCounter(leveldb,'HEM!kWh!24h!',helper.time24h(),.002);
-      helper.incCounter(leveldb,'HEM!kWh!28d!',helper.time28d(),.002);
+      helper.incCounter(leveldb,'HEM!kWh!15m!',helper.time15m(),0.002);
+      helper.incCounter(leveldb,'HEM!kWh!60m!',helper.time60m(),0.002);
+      helper.incCounter(leveldb,'HEM!kWh!24h!',helper.time24h(),0.002);
+      helper.incCounter(leveldb,'HEM!kWh!28d!',helper.time28d(),0.002);
       helper.storeAvg(leveldb,'HEM!W!15m!',helper.time15m(),data);
       helper.storeAvg(leveldb,'HEM!W!60m!',helper.time60m(),data);
       helper.storeAvg(leveldb,'HEM!W!24h!',helper.time24h(),data);
@@ -51,10 +60,10 @@ function spData (data){
           if (err.notFound) {
             // handle a 'NotFoundError' here
             io.emit('kWh', 0);
-            returns
+            return;
           }
         // I/O or other error, pass it up the callback chain
-        return callback(err)
+        return callback(err);
         } else {
           io.emit('kWh', JSON.parse(value)[1]);
         }
@@ -82,18 +91,18 @@ function spData (data){
       dewCur=data;
       if (dewCur >= dewOn && Date.now()-lastTime > 300000 ) {
         dewStatus = "On";
-        sp.write('F');
-        sp.write('C');
-        sp.write('O');
+        spWrite.write('F');
+        spWrite.write('C');
+        spWrite.write('O');
         lastTime = Date.now();
-      };
+      }
       if (dewCur <= dewOff && Date.now()-lastTime > 600000) {
         dewStatus = "Off";
-        sp.write('o');
-        sp.write('c');
-        sp.write('f');
+        spWrite.write('o');
+        spWrite.write('c');
+        spWrite.write('f');
         lastTime = Date.now();
-      };
+      }
       break;
 
     case 'RH':
@@ -126,23 +135,19 @@ function spData (data){
 
     case 'GPM':
       child.stdin.write('update ' + __dirname + '/hem-gpm.rrd N:' + data + '\n');
-      helper.incCounter(leveldb,'HEM!Gal!15m!',helper.time15m(),.25);
-      helper.incCounter(leveldb,'HEM!Gal!60m!',helper.time60m(),.25);
-      helper.incCounter(leveldb,'HEM!Gal!24h!',helper.time24h(),.25);
-      helper.incCounter(leveldb,'HEM!Gal!28d!',helper.time28d(),.25);
+      helper.incCounter(leveldb,'HEM!Gal!15m!',helper.time15m(),0.25);
+      helper.incCounter(leveldb,'HEM!Gal!60m!',helper.time60m(),0.25);
+      helper.incCounter(leveldb,'HEM!Gal!24h!',helper.time24h(),0.25);
+      helper.incCounter(leveldb,'HEM!Gal!28d!',helper.time28d(),0.25);
       helper.storeAvg(leveldb,'HEM!GPM!15m!',helper.time15m(),data);
       helper.storeAvg(leveldb,'HEM!GPM!60m!',helper.time60m(),data);
       helper.storeAvg(leveldb,'HEM!GPM!24h!',helper.time24h(),data);
       helper.storeAvg(leveldb,'HEM!GPM!28d!',helper.time28d(),data);
       break;
   }
+}
 
-};
-sp.on('data', spData);
-
-sp.on('error', function(data){
-  console.error(data.toString());
-});
+spRead.on('data', spData);
 
 //Webserver
 var express = require('express');
@@ -166,6 +171,7 @@ function graph(req,res){
   arg.push('VRULE:' + Math.round(times.sunset.getTime()/1000) + '#00a5ff');
 
   if ('start' in req.query){
+    var now = new Date ();
     switch (req.query.start){
       case '1h':
         arg.push('-s');
@@ -190,7 +196,6 @@ function graph(req,res){
       case '24h':
         arg.push('-s');
         arg.push('now-24hour');
-        var now = new Date ();
         arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(now.getDate() - 1), 41.1660, -85.4831).sunrise.getTime()/1000) + '#FFA500');
         arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(now.getDate() - 1), 41.1660, -85.4831).solarNoon.getTime()/1000) + '#ff0000');
         arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(now.getDate() - 1), 41.1660, -85.4831).sunset.getTime()/1000) + '#00a5ff');
@@ -198,7 +203,6 @@ function graph(req,res){
       case '48h':
         arg.push('-s');
         arg.push('now-48hour');
-        var now = new Date ();
         arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(now.getDate() - 1), 41.1660, -85.4831).sunrise.getTime()/1000) + '#FFA500');
         arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(now.getDate() - 1), 41.1660, -85.4831).solarNoon.getTime()/1000) + '#ff0000');
         arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(now.getDate() - 1), 41.1660, -85.4831).sunset.getTime()/1000) + '#00a5ff');
@@ -252,7 +256,7 @@ function graph(req,res){
     //console.log(data.toString());
   });
   child.stdout.pipe(res);
-};
+}
 app.get('/graph/:id', graph);
 
 app.get('/dewstatus', function(req, res){
@@ -263,23 +267,23 @@ app.get('/dewstatus', function(req, res){
   if ('on' in req.query && 'off' in req.query){
     dewOn=Number(req.query.on);
     dewOff=Number(req.query.off);
-  };
+  }
 
   var obj = {dewpoint:dewCur, on:dewOn, off:dewOff, state:dewStatus, time:min + ':' + sec};
   res.send(obj);
 });
 
 var grpmap = [];
-  grpmap['kWh']='kWh';
-  grpmap['W']='W';
-  grpmap['Gal']='Gal';
-  grpmap['GPM']='GPM';
-  grpmap['In']='In';
-  grpmap['Out']='Out';
-  grpmap['Upper']='Upper';
-  grpmap['Lower']='Lower';
-  grpmap['DEW']='DEW';
-  grpmap['T']='T';
+  grpmap.kWh='kWh';
+  grpmap.W='W';
+  grpmap.Gal='Gal';
+  grpmap.GPM='GPM';
+  grpmap.In='In';
+  grpmap.Out='Out';
+  grpmap.Upper='Upper';
+  grpmap.Lower='Lower';
+  grpmap.DEW='DEW';
+  grpmap.T='T';
 
 var timemap=[];
   timemap['15m']='15m';
@@ -297,7 +301,7 @@ app.get('/chart/:grp/:time', function(req, res){
     })
     .on('close',function(){
       res.jsonp(out);
-    })
+    });
 });
 
 app.use(express.static(__dirname + '/public'));
@@ -325,7 +329,7 @@ setInterval(function(){
   if (Date.now() - watchDog > 60000 ){
     helper.message('Watchdog expired');
     watchDogCount += 1;
-  };
+  }
   if (watchDogCount > 2) {
     process.exit(1);
   }

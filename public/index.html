@@ -39,17 +39,28 @@
   <script src="/socket.io/socket.io.js"></script>
   <script>
   $(function(){
-    var temp = Math.floor(Date.now()/1000/30)*60*1000;
-    $('#watt2').attr("src","/graph/watt?" + temp + '&start=4h');
-    $('#temp2').attr("src","/graph/temp?" + temp + '&start=4h');
-    $('#ac2').attr("src","/graph/ac?" + temp + '&start=4h');
-    $('#wh2').attr("src","/graph/wh?" + temp + '&start=4h');
-    $('#gpm2').attr("src","/graph/gpm?" + temp + '&start=4h');
-    $('#watt24').attr("src","/graph/watt?" + temp + '&start=24h');
-    $('#temp24').attr("src","/graph/temp?" + temp + '&start=24h');
-    $('#ac24').attr("src","/graph/ac?" + temp + '&start=24h');
-    $('#wh24').attr("src","/graph/wh?" + temp + '&start=24h');
-    $('#gpm24').attr("src","/graph/gpm?" + temp + '&start=24h');
+    function time(){
+      return Math.floor(Date.now()/1000/30)*60*1000;
+    }
+
+    function loadImg(temp){
+      $('#watt2').attr("src","/graph/watt?" + temp + '&start=4h');
+      $('#temp2').attr("src","/graph/temp?" + temp + '&start=4h');
+      $('#ac2').attr("src","/graph/ac?" + temp + '&start=4h');
+      $('#wh2').attr("src","/graph/wh?" + temp + '&start=4h');
+      $('#gpm2').attr("src","/graph/gpm?" + temp + '&start=4h');
+      $('#watt24').attr("src","/graph/watt?" + temp + '&start=24h');
+      $('#temp24').attr("src","/graph/temp?" + temp + '&start=24h');
+      $('#ac24').attr("src","/graph/ac?" + temp + '&start=24h');
+      $('#wh24').attr("src","/graph/wh?" + temp + '&start=24h');
+      $('#gpm24').attr("src","/graph/gpm?" + temp + '&start=24h');
+    }
+
+    loadImg(time());
+
+    $('img').click(function(){
+      loadImg(time());
+    });
 
     var iosocket = io.connect();
     iosocket.on('connect', function(){
@@ -72,17 +83,21 @@
         $('#aclow').html('Low AC Temp:  ' + message + 'F<br>');
       });
       iosocket.on('kWh', function(message){
-        var cost = (message * .105 + 19) * 1.07;
+        var cost = (message * 0.105 + 19) * 1.07;
 
         var month;
-        new Date().getDate() > 6 ? month = new Date().getMonth() : month = new Date().getMonth() - 1
+        if (new Date().getDate() > 6){
+          month = new Date().getMonth();
+        } else {
+          month = new Date().getMonth() - 1;
+        }
 
         var startOfBillingCycle = new Date(new Date().getFullYear(),month,7).getTime();
         var endOfBillingCycle = new Date(new Date().getFullYear(),month+1,7).getTime();
 
         var projectedkWh = message / (new Date().getTime() - startOfBillingCycle) * (endOfBillingCycle - startOfBillingCycle);
 
-        var projectedCost = (projectedkWh * .105 + 19) * 1.07;
+        var projectedCost = (projectedkWh * 0.105 + 19) * 1.07;
 
         $('#kWh').html(message + ' kWh @ $' + cost.toFixed(2) + '<br>Projected Monthly Cost:  ' + projectedkWh.toFixed(2) + 'kWh @ $' + projectedCost.toFixed(2) +'<br>');
       });
