@@ -22,9 +22,9 @@ var leveldb = level(__dirname + '/hemdb');
 var spawn = require('child_process').spawn;
 var child = spawn('rrdtool', ['-']);
 
-child.stdout.on('data', function (data){
+//child.stdout.on('data', function (data){
   //console.log(data.toString());
-});
+//});
 
 child.stderr.on('data', function (data){
   console.error(data.toString());
@@ -91,16 +91,16 @@ function spData(rxData){
 
     case 'DEW':
       child.stdin.write('update ' + __dirname + '/hem-dew.rrd N:' + 
-        sdata + '\n');
+        data + '\n');
       dewCur=data;
-      if (dewCur >= dewOn && Date.now()-lastTime > 300000 ) {
+      if (dewCur >= dewOn && Date.now() - lastTime > 300000 ) {
         dewStatus = 'On';
         spWrite.write('F');
         spWrite.write('C');
         spWrite.write('O');
         lastTime = Date.now();
       }
-      if (dewCur <= dewOff && Date.now()-lastTime > 600000) {
+      if (dewCur <= dewOff && Date.now() - lastTime > 600000) {
         dewStatus = 'Off';
         spWrite.write('o');
         spWrite.write('c');
@@ -176,9 +176,9 @@ function graph(req, res){
 
   var times = SunCalc.getTimes(new Date(), 41.1660, -85.4831);
   
-  arg.push('VRULE:' + Math.round(times.sunrise.getTime()/1000) + '#FFA500');
-  arg.push('VRULE:' + Math.round(times.solarNoon.getTime()/1000) + '#ff0000');
-  arg.push('VRULE:' + Math.round(times.sunset.getTime()/1000) + '#00a5ff');
+  arg.push('VRULE:' + Math.round(times.sunrise.getTime() / 1000) + '#FFA500');
+  arg.push('VRULE:' + Math.round(times.solarNoon.getTime() / 1000) + '#ff0000');
+  arg.push('VRULE:' + Math.round(times.sunset.getTime() / 1000) + '#00a5ff');
 
   if ('start' in req.query){
     var now = new Date ();
@@ -207,35 +207,35 @@ function graph(req, res){
         arg.push('-s');
         arg.push('now-24hour');
         arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(
-          now.getDate() - 1), 41.1660, -85.4831).sunrise.getTime()/1000) + 
+          now.getDate() - 1), 41.1660, -85.4831).sunrise.getTime() / 1000) + 
           '#FFA500');
         arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(
-          now.getDate() - 1), 41.1660, -85.4831).solarNoon.getTime()/1000) + 
+          now.getDate() - 1), 41.1660, -85.4831).solarNoon.getTime() / 1000) + 
           '#ff0000');
         arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(
-          now.getDate() - 1), 41.1660, -85.4831).sunset.getTime()/1000) + 
+          now.getDate() - 1), 41.1660, -85.4831).sunset.getTime() / 1000) + 
           '#00a5ff');
         break;
       case '48h':
         arg.push('-s');
         arg.push('now-48hour');
         arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(
-          now.getDate() - 1), 41.1660, -85.4831).sunrise.getTime()/1000) + 
+          now.getDate() - 1), 41.1660, -85.4831).sunrise.getTime() / 1000) + 
           '#FFA500');
         arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(
-          now.getDate() - 1), 41.1660, -85.4831).solarNoon.getTime()/1000) + 
+          now.getDate() - 1), 41.1660, -85.4831).solarNoon.getTime() / 1000) + 
           '#ff0000');
         arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(
-          now.getDate() - 1), 41.1660, -85.4831).sunset.getTime()/1000) + 
+          now.getDate() - 1), 41.1660, -85.4831).sunset.getTime() / 1000) + 
           '#00a5ff');
         arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(
-          now.getDate() - 2), 41.1660, -85.4831).sunrise.getTime()/1000) + 
+          now.getDate() - 2), 41.1660, -85.4831).sunrise.getTime() / 1000) + 
           '#FFA500');
         arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(
-          now.getDate() - 2), 41.1660, -85.4831).solarNoon.getTime()/1000) + 
+          now.getDate() - 2), 41.1660, -85.4831).solarNoon.getTime() / 1000) + 
           '#ff0000');
         arg.push('VRULE:' + Math.round(SunCalc.getTimes(new Date().setDate(
-          now.getDate() - 2), 41.1660, -85.4831).sunset.getTime()/1000) + 
+          now.getDate() - 2), 41.1660, -85.4831).sunset.getTime() / 1000) + 
           '#00a5ff');
         break;
     }
@@ -252,8 +252,8 @@ function graph(req, res){
       arg.push('LINE1:rh#00ff00:Relative_Humidity');
       arg.push('DEF:dew=' + __dirname + '/hem-dew.rrd:dew:AVERAGE');
       arg.push('LINE1:dew#000000:Dew_Point');
-      arg.push('CDEF:smoothed=dew, 1800, TREND');
-      arg.push('LINE1:smoothed#AA00AA:Dew_Point_Trend');
+//      arg.push('CDEF:smoothed=dew, 1800, TREND');
+//      arg.push('LINE1:smoothed#AA00AA:Dew_Point_Trend');
       arg.push('DEF:in=' + __dirname + '/hem-in.rrd:in:AVERAGE');
       arg.push('LINE1:in#0000ff:Inside');
       arg.push('DEF:out=' + __dirname + '/hem-out.rrd:out:AVERAGE');
@@ -288,8 +288,8 @@ function graph(req, res){
 app.get('/graph/:id', graph);
 
 app.get('/dewstatus', function (req, res){
-  var temp = Math.round((Date.now()-lastTime)/1000);
-  var min = Math.floor(temp/60);
+  var temp = Math.round((Date.now() - lastTime) / 1000);
+  var min = Math.floor(temp / 60);
   var sec = temp % 60;
  
   if ('on' in req.query && 'off' in req.query){

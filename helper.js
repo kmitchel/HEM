@@ -11,7 +11,7 @@ exports.time24h = function (){
 };
 exports.time28d = function (){
   var month;
-  if (Date().getDate() > 6){
+  if (new Date().getDate() > 6){
     month = new Date().getMonth();
   } else {
     month = new Date().getMonth() - 1;
@@ -55,7 +55,7 @@ exports.storeAvg = function (db, prefix, timeStamp, value){
         // handle a 'NotFoundError' here
         //timestamp, min, count, culumative, max
         db.put(prefix + timeStamp, 
-          sJSON.stringify([timeStamp, value, 1, value, value]));
+          JSON.stringify([timeStamp, value, 1, value, value]));
         return;
       }
       // I/O or other error, pass it up the callback chain
