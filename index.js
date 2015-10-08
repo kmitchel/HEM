@@ -23,7 +23,7 @@ var spawn = require('child_process').spawn;
 var child = spawn('rrdtool', ['-']);
 
 child.stdout.on('data', function (data){
-  if (data.toString().indexOf('OK') != 0){
+  if (data.toString().indexOf('OK') !== 0){
     console.log(data.toString());
   }
 });
