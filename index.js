@@ -22,9 +22,11 @@ var leveldb = level(__dirname + '/hemdb');
 var spawn = require('child_process').spawn;
 var child = spawn('rrdtool', ['-']);
 
-//child.stdout.on('data', function (data){
-  //console.log(data.toString());
-//});
+child.stdout.on('data', function (data){
+  if (data.toString().indexOf('OK') != 0){
+    console.log(data.toString());
+  }
+});
 
 child.stderr.on('data', function (data){
   console.error(data.toString());
@@ -41,10 +43,10 @@ var watchDog = Date.now();
 var watchDogCount = 0;
 
 function spData(rxData){
-  var split = rxData.trim().split(':');
-  var data = Number(split[1]);
-  io.emit(split[0], data);
-  switch(split[0]){
+  var splitted = rxData.trim().split(':');
+  var data = Number(splitted[1]);
+  io.emit(splitted[0], data);
+  switch(splitted[0]){
     case 'W':
       watchDog = Date.now();
       child.stdin.write('update ' + __dirname + '/hem-w.rrd N:' + data + '\n');
@@ -273,7 +275,7 @@ function graph(req, res){
       break;
     case 'gpm':
       arg.push('DEF:gpm=' + __dirname + '/hem-gpm.rrd:gpm:AVERAGE');
-      arg.push('LINE1:gpm#000000:GPM');
+      arg.push('AREA:gpm#000000:GPM');
       break;
   }
   var child = spawn('rrdtool', arg);
