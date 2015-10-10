@@ -2,9 +2,9 @@
 var fs = require('fs');
 var split = require('split');
 
-var spRead = fs.createReadStream('/dev/arduino', {encoding: 'ascii'})
+var spRead = fs.createReadStream('/dev/ttyAMA0', {encoding: 'ascii'})
   .pipe(split());
-var spWrite = fs.createWriteStream('/dev/arduino');
+var spWrite = fs.createWriteStream('/dev/ttyAMA0');
 
 spRead.on('error', function (data){
   console.log(data.toString());

@@ -1,3 +1,4 @@
+
 var machine = {
 	states : {
 		ready : 1,
