@@ -45,13 +45,13 @@ function spData(rxData){
   io.emit(splitted[0], splitted[1]);
   switch(splitted[0]){
     case 'S':
-      if (splitted[1] == 'Heating' && splitted[1] == 'HeatOn'){
+      if (splitted[1] == 'Heating' || splitted[1] == 'HeatOn'){
         helper.incCounter(leveldb, 'HEM!heat!15m!', helper.time15m(), 0.5);
         helper.incCounter(leveldb, 'HEM!heat!60m!', helper.time60m(), 0.5);
         helper.incCounter(leveldb, 'HEM!heat!24h!', helper.time24h(), 0.5);
         helper.incCounter(leveldb, 'HEM!heat!28d!', helper.time28d(), 0.5);
       }
-      if (splitted[1] == 'Cooling' && splitted[1] == 'CoolOn'){
+      if (splitted[1] == 'Cooling' || splitted[1] == 'CoolOn'){
         helper.incCounter(leveldb, 'HEM!cool!15m!', helper.time15m(), 0.5);
         helper.incCounter(leveldb, 'HEM!cool!60m!', helper.time60m(), 0.5);
         helper.incCounter(leveldb, 'HEM!cool!24h!', helper.time24h(), 0.5);
