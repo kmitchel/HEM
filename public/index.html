@@ -16,6 +16,7 @@
   <span id='gpm'></span>
   <span id='rh'></span>
   <span id='dew'></span>
+  <span id='state'></span>
   <img id="watt2" width=100%>
   <br>
   <img id="temp2" width=100%>
@@ -64,6 +65,9 @@
 
     var iosocket = io.connect();
     iosocket.on('connect', function(){
+      iosocket.on('S', function(message){
+        $('#state').html(message + '<br>');
+      });
       iosocket.on('W', function(message){
         $('#power').html('Current Power:  ' + message + 'W<br>');
       });

@@ -46,18 +46,41 @@
           </div>
 
           <div class="inner cover">
-            <h1 class="cover-heading" id="temp"></h1>
-            <p class="lead">
-                <span id="rh"></span>
-                <br>
-                <span id="dew"></span>
+            <h1 class="cover-heading"><span id="temp"></span> F</h1>
+            <div class="lead">
+              <p>Humidity:  <span id="rh"></span> %</p>
+              <p>Dew Point:  <span id="dew"></span> F</p>
+              <p><span id="state"></span></p>
+            </Div>
+            <p>
+              Cool On
+              <span class="btn btn-default btn-sm" id="coolOnDown">-</span>
+              <span id="coolOn"></span>
+              <span class="btn btn-default btn-sm" id="coolOnUp">+</span>
+              F
             </p>
-            <p class="lead">
-              <a class="btn btn-default" id="cool">Cooler</a>
+            <p>
+              Cool Off
+              <span class="btn btn-default btn-sm" id="coolOffDown">-</span>
+              <span id="coolOff"></span>
+              <span class="btn btn-default btn-sm" id="coolOffUp">+</span>
+              F
             </p>
-            <p class="lead">
-              <a class="btn btn-default" id="warm">Warmer</a>
+            <p>
+              Heat Off
+              <span class="btn btn-default btn-sm" id="heatOffDown">-</span>
+              <span id="heatOff"></span>
+              <span class="btn btn-default btn-sm" id="heatOffUp">+</span>
+              F
             </p>
+            <p>
+              Heat On
+              <span class="btn btn-default btn-sm" id="heatOnDown">-</span>
+              <span id="heatOn"></span>
+              <span class="btn btn-default btn-sm" id="heatOnUp">+</span>
+              F
+            </p>
+
             <p class="lead" id="status"></p>
           </div>
 
@@ -86,50 +109,98 @@ $(function(){
       return Math.floor(Date.now()/1000/30)*60*1000;
     }
 
-    var on=0, off=0;
     var iosocket = io.connect();
     iosocket.on('connect', function(){
       iosocket.on('DEW', function(message){
-        $('#dew').html('Dew Point: ' + message + 'F');
-        $.getJSON('/dewstatus?' + time(),function(data){
-          $('#status').html('AC is ' + data.state + ' for ' + data.time + '<br>AC on at Dew Point of ' + data.on + 'F<br>AC off at Dew Point of ' + data.off + 'F' );
-          on=data.on;
-          off=data.off;
-        });
+        $('#dew').html(message);
       });
       iosocket.on('RH', function(message){
-        $('#rh').html('Humidity: ' + message + '%');
+        $('#rh').html(message);
       });
       iosocket.on('T', function(message){
-        $('#temp').html(message + 'F');
+        $('#temp').html(message);
+      });
+      iosocket.on('S', function(message){
+        $('#state').html(message);
+      });
+
+    });
+
+    var tempS;
+
+    $.getJSON('/hvacstatus',function(data){
+      tempS = data;
+      $('#coolOn').html(data.coolOn);
+      $('#coolOff').html(data.coolOff);
+      $('#heatOff').html(data.heatOff);
+      $('#heatOn').html(data.heatOn);
+      $('#rh').html(data.RH);
+      $('#temp').html(data.T);
+      $('#dew').html(data.DEW);
+    });
+
+    $('#coolOnDown').click(function(){
+      tempS.coolOn -= 1;
+      $.getJSON('/hvacstatus?coolon=' + tempS.coolOn, function(data){
+        tempS=data;
+        $('#coolOn').html(tempS.coolOn);
       });
     });
 
-    $.getJSON('/dewstatus',function(data){
-      $('#status').html('AC is ' + data.state + ' for ' + data.time + '<br>AC on at Dew Point of ' + data.on + 'F<br>AC off at Dew Point of ' + data.off + 'F' );
-      on=data.on;
-      off=data.off;
+    $('#coolOnUp').click(function(){
+      tempS.coolOn += 1;
+      $.getJSON('/hvacstatus?coolon=' + tempS.coolOn, function(data){
+        tempS=data;
+        $('#coolOn').html(tempS.coolOn);
+      });
     });
-
-    $('#cool').click(function(){
-      on-=1;
-      off-=1;
-      $.getJSON('/dewstatus?on='+on+'&off='+off,function(data){
-        $('#status').html('AC is ' + data.state + ' for ' + data.time + '<br>AC on at Dew Point of ' + data.on + 'F<br>AC off at Dew Point of ' + data.off + 'F' );
-        on=data.on;
-        off=data.off;
+    $('#coolOffDown').click(function(){
+      tempS.coolOff -= 1;
+      $.getJSON('/hvacstatus?cooloff=' + tempS.coolOff, function(data){
+        tempS=data;
+        $('#coolOff').html(tempS.coolOff);
       });
     });
 
-    $('#warm').click(function(){
-      on+=1;
-      off+=1;
-      $.getJSON('/dewstatus?on='+on+'&off='+off,function(data){
-        $('#status').html('AC is ' + data.state + ' for ' + data.time + '<br>AC on at Dew Point of ' + data.on + 'F<br>AC off at Dew Point of ' + data.off + 'F' );
-        on=data.on;
-        off=data.off;
+    $('#coolOffUp').click(function(){
+      tempS.coolOff += 1;
+      $.getJSON('/hvacstatus?cooloff=' + tempS.coolOff, function(data){
+        tempS=data;
+        $('#coolOff').html(tempS.coolOff);
       });
     });
+
+    $('#heatOffDown').click(function(){
+      tempS.heatOff -= 1;
+      $.getJSON('/hvacstatus?heatoff=' + tempS.heatOff, function(data){
+        tempS=data;
+        $('#heatOff').html(tempS.heatOff);
+      });
+    });
+
+    $('#heatOffUp').click(function(){
+      tempS.heatOff += 1;
+      $.getJSON('/hvacstatus?heatoff=' + tempS.heatOff, function(data){
+        tempS=data;
+        $('#heatOff').html(tempS.heatOff);
+      });
+    });
+    $('#heatOnDown').click(function(){
+      tempS.heatOn -= 1;
+      $.getJSON('/hvacstatus?heaton=' + tempS.heatOn, function(data){
+        tempS=data;
+        $('#heatOn').html(tempS.heatOn);
+      });
+    });
+
+    $('#heatOnUp').click(function(){
+      tempS.heatOn += 1;
+      $.getJSON('/hvacstatus?heaton=' + tempS.heatOn, function(data){
+        tempS=data;
+        $('#heatOn').html(tempS.heatOn);
+      });
+    });
+
 
 });
 </script>

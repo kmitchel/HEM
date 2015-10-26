@@ -34,19 +34,33 @@ child.stderr.on('data', function (data){
 
 var helper = require('./helper.js');
 
-var dewOn = 56;
-var dewOff = 54;
-var dewCur = 55;
-var dewStatus = 'Off';
-var lastTime = Date.now();
 var watchDog = Date.now();
 var watchDogCount = 0;
+
+var tempS = {};
 
 function spData(rxData){
   var splitted = rxData.trim().split(':');
   var data = Number(splitted[1]);
-  io.emit(splitted[0], data);
+  io.emit(splitted[0], splitted[1]);
   switch(splitted[0]){
+    case 'S':
+      if (splitted[1] == 'Heating' && splitted[1] == 'HeatOn'){
+        helper.incCounter(leveldb, 'HEM!heat!15m!', helper.time15m(), 0.5);
+        helper.incCounter(leveldb, 'HEM!heat!60m!', helper.time60m(), 0.5);
+        helper.incCounter(leveldb, 'HEM!heat!24h!', helper.time24h(), 0.5);
+        helper.incCounter(leveldb, 'HEM!heat!28d!', helper.time28d(), 0.5);
+      }
+      if (splitted[1] == 'Cooling' && splitted[1] == 'CoolOn'){
+        helper.incCounter(leveldb, 'HEM!cool!15m!', helper.time15m(), 0.5);
+        helper.incCounter(leveldb, 'HEM!cool!60m!', helper.time60m(), 0.5);
+        helper.incCounter(leveldb, 'HEM!cool!24h!', helper.time24h(), 0.5);
+        helper.incCounter(leveldb, 'HEM!cool!28d!', helper.time28d(), 0.5);
+      }
+    case 'Q':
+      var debugSplit = splitted[1].split('=');
+      tempS[debugSplit[0]]=Number(debugSplit[1]);
+      break;
     case 'W':
       watchDog = Date.now();
       child.stdin.write('update ' + __dirname + '/hem-w.rrd N:' + data + '\n');
@@ -74,6 +88,7 @@ function spData(rxData){
       break;
 
     case 'T':
+      tempS['T'] = data;
       child.stdin.write('update ' + __dirname + '/hem-in.rrd N:' + 
         data + '\n');
       helper.storeAvg(leveldb, 'HEM!In!15m!', helper.time15m(), data);
@@ -83,6 +98,7 @@ function spData(rxData){
       break;
 
     case '289C653F03000027':
+      tempS['OUT'] = data;
       child.stdin.write('update ' + __dirname + '/hem-out.rrd N:' + 
         data + '\n');
       helper.storeAvg(leveldb, 'HEM!Out!15m!', helper.time15m(), data);
@@ -92,26 +108,13 @@ function spData(rxData){
       break;
 
     case 'DEW':
+      tempS['DEW'] = data;
       child.stdin.write('update ' + __dirname + '/hem-dew.rrd N:' + 
         data + '\n');
-      dewCur=data;
-      if (dewCur >= dewOn && Date.now() - lastTime > 300000 ) {
-        dewStatus = 'On';
-        spWrite.write('F');
-        spWrite.write('C');
-        spWrite.write('O');
-        lastTime = Date.now();
-      }
-      if (dewCur <= dewOff && Date.now() - lastTime > 600000) {
-        dewStatus = 'Off';
-        spWrite.write('o');
-        spWrite.write('c');
-        spWrite.write('f');
-        lastTime = Date.now();
-      }
       break;
 
     case 'RH':
+      tempS['RH'] = data;
       child.stdin.write('update ' + __dirname + '/hem-rh.rrd N:' + 
         data + '\n');
       break;
@@ -289,19 +292,27 @@ function graph(req, res){
 }
 app.get('/graph/:id', graph);
 
-app.get('/dewstatus', function (req, res){
-  var temp = Math.round((Date.now() - lastTime) / 1000);
-  var min = Math.floor(temp / 60);
-  var sec = temp % 60;
+app.get('/hvacstatus', function (req, res){
  
-  if ('on' in req.query && 'off' in req.query){
-    dewOn=Number(req.query.on);
-    dewOff=Number(req.query.off);
+  if ('coolon' in req.query){
+    spWrite.write('coolOn=' + req.query.coolon +'\n');
+  }
+  if ('cooloff' in req.query){
+    spWrite.write('coolOff=' + req.query.cooloff +'\n');
+  }
+  if ('heaton' in req.query){
+    spWrite.write('heatOn=' + req.query.heaton +'\n');
+  }
+  if ('heatoff' in req.query){
+    spWrite.write('heatOff=' + req.query.heatoff +'\n');
   }
 
-  var obj = {dewpoint:dewCur, on:dewOn, off:dewOff, state:dewStatus, 
-    time:min + ':' + sec};
-  res.send(obj);
+  spWrite.write('coolOn?\ncoolOff?\nheatOn?\nheatOff?\n',function(){
+    setTimeout(function(){
+      res.send(tempS)
+    },200)
+  }); 
+
 });
 
 var grpmap = [];
@@ -315,6 +326,9 @@ var grpmap = [];
   grpmap.Lower='Lower';
   grpmap.DEW='DEW';
   grpmap.T='T';
+  grpmap.heat='heat';
+  grpmap.cool='cool';
+
 
 var timemap=[];
   timemap['15m']='15m';
