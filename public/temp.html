@@ -50,6 +50,7 @@
             <div class="lead">
               <p>Humidity:  <span id="rh"></span> %</p>
               <p>Dew Point:  <span id="dew"></span> F</p>
+              <p>Outdoor Temp: <span id="out"></span> F </p>
               <p><span id="state"></span></p>
             </div>
             <div>
@@ -123,6 +124,9 @@ $(function(){
       iosocket.on('T', function(message){
         $('#temp').html(message);
       });
+      iosocket.on('289C653F03000027', function(message){
+        $('#out').html(message);
+      });
       iosocket.on('S', function(message){
         $('#state').html(message);
       });
@@ -140,6 +144,8 @@ $(function(){
       $('#rh').html(data.RH);
       $('#temp').html(data.T);
       $('#dew').html(data.DEW);
+      $('#out').html(data.OUT);
+
     });
 
     $('#coolOnDown').click(function(){

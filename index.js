@@ -361,6 +361,8 @@ setInterval(function (){
   helper.purgeDB(leveldb, 'HEM!Out!15m!', helper.time1dAgo());
   helper.purgeDB(leveldb, 'HEM!Upper!15m!', helper.time1dAgo());
   helper.purgeDB(leveldb, 'HEM!Lower!15m!', helper.time1dAgo());
+  helper.purgeDB(leveldb, 'HEM!cool!15m!', helper.time1dAgo());
+  helper.purgeDB(leveldb, 'HEM!heat!15m!', helper.time1dAgo());
 }, 3600000);
 
 setInterval(function (){ 
@@ -372,6 +374,8 @@ setInterval(function (){
   helper.purgeDB(leveldb, 'HEM!Out!60m!', helper.time7dAgo());
   helper.purgeDB(leveldb, 'HEM!Upper!60m!', helper.time7dAgo());
   helper.purgeDB(leveldb, 'HEM!Lower!60m!', helper.time7dAgo());
+  helper.purgeDB(leveldb, 'HEM!cool!60m!', helper.time7dAgo());
+  helper.purgeDB(leveldb, 'HEM!heat!60m!', helper.time7dAgo());
 }, 3600000);
 
 setInterval(function (){
