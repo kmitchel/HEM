@@ -50,12 +50,19 @@ function spData(rxData){
         helper.incCounter(leveldb, 'HEM!heat!60m!', helper.time60m(), 0.5);
         helper.incCounter(leveldb, 'HEM!heat!24h!', helper.time24h(), 0.5);
         helper.incCounter(leveldb, 'HEM!heat!28d!', helper.time28d(), 0.5);
+        child.stdin.write('update ' + __dirname + '/hem-heat.rrd N:100\n');
+      } else {
+        child.stdin.write('update ' + __dirname + '/hem-heat.rrd N:0\n');
       }
       if (splitted[1] == 'Cooling' || splitted[1] == 'CoolOn'){
         helper.incCounter(leveldb, 'HEM!cool!15m!', helper.time15m(), 0.5);
         helper.incCounter(leveldb, 'HEM!cool!60m!', helper.time60m(), 0.5);
         helper.incCounter(leveldb, 'HEM!cool!24h!', helper.time24h(), 0.5);
         helper.incCounter(leveldb, 'HEM!cool!28d!', helper.time28d(), 0.5);
+        child.stdin.write('update ' + __dirname + '/hem-cool.rrd N:100\n');
+      } else {
+        child.stdin.write('update ' + __dirname + '/hem-cool.rrd N:0\n');
+  
       }
     case 'Q':
       var debugSplit = splitted[1].split('=');
@@ -253,6 +260,9 @@ function graph(req, res){
       arg.push('LINE1:w#000000:Watts');
       break;
     case 'temp':
+      arg.push('DEF:heat=' + __dirname + '/hem-heat.rrd:heat:AVERAGE');
+      arg.push('DEF:cool=' + __dirname + '/hem-cool.rrd:cool:AVERAGE');
+//      arg.push('AREA:heat#cccccc:Heater');
       arg.push('DEF:rh=' + __dirname + '/hem-rh.rrd:rh:AVERAGE');
       arg.push('LINE1:rh#00ff00:Relative_Humidity');
       arg.push('DEF:dew=' + __dirname + '/hem-dew.rrd:dew:AVERAGE');
@@ -260,9 +270,13 @@ function graph(req, res){
 //      arg.push('CDEF:smoothed=dew, 1800, TREND');
 //      arg.push('LINE1:smoothed#AA00AA:Dew_Point_Trend');
       arg.push('DEF:in=' + __dirname + '/hem-in.rrd:in:AVERAGE');
-      arg.push('LINE1:in#0000ff:Inside');
+      arg.push('LINE1:in#7D3C98:Inside');
       arg.push('DEF:out=' + __dirname + '/hem-out.rrd:out:AVERAGE');
       arg.push('LINE1:out#ff0000:Outside');
+      arg.push('CDEF:heaton=heat,0,GT,in,UNKN,IF');
+      arg.push('LINE2:heaton#ff0000');
+      arg.push('CDEF:coolon=cool,0,GT,in,UNKN,IF');
+      arg.push('LINE2:coolon#0000ff');
       break;
     case 'wh':
       arg.push('DEF:lower=' + __dirname + '/hem-lower.rrd:lower:AVERAGE');
@@ -278,7 +292,8 @@ function graph(req, res){
       break;
     case 'gpm':
       arg.push('DEF:gpm=' + __dirname + '/hem-gpm.rrd:gpm:AVERAGE');
-      arg.push('AREA:gpm#000000:GPM');
+      arg.push('CDEF:fixgpm=gpm,UN,0,gpm,IF');
+      arg.push('LINE1:fixgpm#000000:GPM');
       break;
   }
   var child = spawn('rrdtool', arg);
