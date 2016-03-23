@@ -165,11 +165,33 @@ function spData(rxData){
       helper.storeAvg(leveldb, 'HEM!GPM!60m!', helper.time60m(), data);
       helper.storeAvg(leveldb, 'HEM!GPM!24h!', helper.time24h(), data);
       helper.storeAvg(leveldb, 'HEM!GPM!28d!', helper.time28d(), data);
+      leveldb.get('HEM!Gal!28d!' + helper.time28d(), function (err, value){
+        if (err) {
+          if (err.notFound) {
+            // handle a 'NotFoundError' here
+            io.emit('Gal', 0);
+            return;
+          }
+        // I/O or other error, pass it up the callback chain
+        return callback(err);
+        } else {
+          io.emit('Gal', JSON.parse(value)[1]);
+        }
+      });
       break;
   }
 }
 
 spRead.on('data', spData);
+
+//Listen for ESP
+var net = require('net');
+net.createServer(function (socket){
+	var splitter = require('split');
+	socket.pipe(splitter().on('data', function(data){
+		spData(data);
+	}));
+}).listen(8000);
 
 //Webserver
 var express = require('express');
@@ -393,12 +415,12 @@ setInterval(function (){
   helper.purgeDB(leveldb, 'HEM!heat!60m!', helper.time7dAgo());
 }, 3600000);
 
-setInterval(function (){
-  if (Date.now() - watchDog > 60000 ){
-    helper.message('Watchdog expired');
-    watchDogCount += 1;
-  }
-  if (watchDogCount > 2) {
-    process.exit(1);
-  }
-}, 300000);
+//setInterval(function (){
+//  if (Date.now() - watchDog > 60000 ){
+//    helper.message('Watchdog expired');
+//    watchDogCount += 1;
+//  }
+//  if (watchDogCount > 2) {
+//    process.exit(1);
+//  }
+//}, 300000);
