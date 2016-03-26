@@ -45,6 +45,20 @@ function spData(rxData){
   io.emit(splitted[0], splitted[1]);
   switch(splitted[0]){
     case 'S':
+      if (splitted[1] == 'CoolOn' || splitted[1] == 'Cooling' ){
+        spWrite.write('cool=1\n');
+        spWrite.write('fan=1\n');
+      };
+      if (splitted[1] == 'HeatOn' || splitted[1] == 'Heating'){
+        spWrite.write('heat=1\n');
+      };
+      if (splitted[1] == 'FanWait'){
+        spWrite.write('cool=0\n');
+      };
+      if (splitted[1] == 'Wait'){
+        spWrite.write('heat=0\n');
+        spWrite.write('fan=0\n');
+      }
       if (splitted[1] == 'Heating' || splitted[1] == 'HeatOn'){
         helper.incCounter(leveldb, 'HEM!heat!15m!', helper.time15m(), 0.5);
         helper.incCounter(leveldb, 'HEM!heat!60m!', helper.time60m(), 0.5);
@@ -62,8 +76,8 @@ function spData(rxData){
         child.stdin.write('update ' + __dirname + '/hem-cool.rrd N:100\n');
       } else {
         child.stdin.write('update ' + __dirname + '/hem-cool.rrd N:0\n');
-  
       }
+      break;
     case 'Q':
       var debugSplit = splitted[1].split('=');
       tempS[debugSplit[0]]=Number(debugSplit[1]);
@@ -182,16 +196,29 @@ function spData(rxData){
   }
 }
 
-spRead.on('data', spData);
+//spRead.on('data', spData);
+
+var sockets = [];
 
 //Listen for ESP
 var net = require('net');
 net.createServer(function (socket){
+	socket.setEncoding('ascii');
+	sockets.push(socket);
 	var splitter = require('split');
 	socket.pipe(splitter().on('data', function(data){
 		spData(data);
 	}));
+	socket.on('close', function(){
+		sockets.splice(sockets.indexOf(socket), 1);
+	});
 }).listen(8000);
+
+function broadcast(msg){
+	sockets.forEach(function(x){
+		x.write(msg);
+	});
+};
 
 //Webserver
 var express = require('express');
@@ -330,25 +357,23 @@ function graph(req, res){
 app.get('/graph/:id', graph);
 
 app.get('/hvacstatus', function (req, res){
- 
   if ('coolon' in req.query){
-    spWrite.write('coolOn=' + req.query.coolon +'\n');
+    broadcast('coolOn=' + req.query.coolon +'\n');
   }
   if ('cooloff' in req.query){
-    spWrite.write('coolOff=' + req.query.cooloff +'\n');
+    broadcast('coolOff=' + req.query.cooloff +'\n');
   }
   if ('heaton' in req.query){
-    spWrite.write('heatOn=' + req.query.heaton +'\n');
+    broadcast('heatOn=' + req.query.heaton +'\n');
   }
   if ('heatoff' in req.query){
-    spWrite.write('heatOff=' + req.query.heatoff +'\n');
+    broadcast('heatOff=' + req.query.heatoff +'\n');
   }
 
-  spWrite.write('coolOn?\ncoolOff?\nheatOn?\nheatOff?\n',function(){
+  broadcast('coolOn?\ncoolOff?\nheatOn?\nheatOff?\n');
     setTimeout(function(){
       res.send(tempS)
-    },200)
-  }); 
+    },200); 
 
 });
 
