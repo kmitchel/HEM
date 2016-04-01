@@ -145,12 +145,11 @@ $(function(){
       $('#temp').html(data.T);
       $('#dew').html(data.DEW);
       $('#out').html(data.OUT);
-
     });
 
     $('#coolOnDown').click(function(){
       tempS.coolOn -= 1;
-      $.getJSON('/hvacstatus?coolon=' + tempS.coolOn, function(data){
+      $.post('/hvacstatus' ,{coolOn: tempS.coolOn}, function(data){
         tempS=data;
         $('#coolOn').html(tempS.coolOn);
       });
@@ -158,14 +157,14 @@ $(function(){
 
     $('#coolOnUp').click(function(){
       tempS.coolOn += 1;
-      $.getJSON('/hvacstatus?coolon=' + tempS.coolOn, function(data){
+      $.post('/hvacstatus', {coolOn: tempS.coolOn}, function(data){
         tempS=data;
         $('#coolOn').html(tempS.coolOn);
       });
     });
     $('#coolOffDown').click(function(){
       tempS.coolOff -= 1;
-      $.getJSON('/hvacstatus?cooloff=' + tempS.coolOff, function(data){
+      $.post('/hvacstatus', {coolOff: tempS.coolOff}, function(data){
         tempS=data;
         $('#coolOff').html(tempS.coolOff);
       });
@@ -173,7 +172,7 @@ $(function(){
 
     $('#coolOffUp').click(function(){
       tempS.coolOff += 1;
-      $.getJSON('/hvacstatus?cooloff=' + tempS.coolOff, function(data){
+      $.post('/hvacstatus', {coolOff: tempS.coolOff}, function(data){
         tempS=data;
         $('#coolOff').html(tempS.coolOff);
       });
@@ -181,7 +180,7 @@ $(function(){
 
     $('#heatOffDown').click(function(){
       tempS.heatOff -= 1;
-      $.getJSON('/hvacstatus?heatoff=' + tempS.heatOff, function(data){
+      $.post('/hvacstatus', {heatOff: tempS.heatOff}, function(data){
         tempS=data;
         $('#heatOff').html(tempS.heatOff);
       });
@@ -189,14 +188,14 @@ $(function(){
 
     $('#heatOffUp').click(function(){
       tempS.heatOff += 1;
-      $.getJSON('/hvacstatus?heatoff=' + tempS.heatOff, function(data){
+      $.post('/hvacstatus', {heatOff: tempS.heatOff}, function(data){
         tempS=data;
         $('#heatOff').html(tempS.heatOff);
       });
     });
     $('#heatOnDown').click(function(){
       tempS.heatOn -= 1;
-      $.getJSON('/hvacstatus?heaton=' + tempS.heatOn, function(data){
+      $.post('/hvacstatus', {heatOn: tempS.heatOn}, function(data){
         tempS=data;
         $('#heatOn').html(tempS.heatOn);
       });
@@ -204,13 +203,11 @@ $(function(){
 
     $('#heatOnUp').click(function(){
       tempS.heatOn += 1;
-      $.getJSON('/hvacstatus?heaton=' + tempS.heatOn, function(data){
+      $.post('/hvacstatus', {heatOn: tempS.heatOn}, function(data){
         tempS=data;
         $('#heatOn').html(tempS.heatOn);
       });
     });
-
-
 });
 </script>
 
