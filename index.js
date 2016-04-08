@@ -1,13 +1,3 @@
-//Connect serial port. Emit incoming data.
-var fs = require('fs');
-var split = require('split');
-
-var spWrite = fs.createWriteStream('/dev/ttyAMA0');
-
-spWrite.on('error', function (data){
-  console.log(data.toString());
-});
-
 //Update database.
 var level = require('level');
 var leveldb = level(__dirname + '/hemdb');
@@ -171,228 +161,31 @@ function graph(req, res){
 app.get('/graph/:id', graph);
 
 app.get('/hvacstatus', function (req, res){
-  var request = require('request');
-  request.get({url:'http://esp8266-webupdate.local/set', json:true}, function (error, response, body) {
-    if (!error && response.statusCode == 200) {
-      for (var attrname in body) { tempS[attrname] = Number(body[attrname]); }
-      res.send(tempS) // Show the HTML for the Google homepage. 
-    }
-  });
+  client.publish('hvac/coolOn', '?');
+  client.publish('hvac/coolOff', '?');
+  client.publish('hvac/heatOn', '?');
+  client.publish('hvac/heatOff', '?');
+  setTimeout(function(){res.send(tempS)}, 250);
 });
 
 app.post('/hvacstatus', function (req, res){
   if ('coolOn' in req.body){
-    var request = require('request');
-    request.post({url:'http://esp8266-webupdate.local/set', body:'coolOn=' + req.body.coolOn}, function (error, response, body) {
-      if (!error && response.statusCode == 200) {
-        tempS['coolOn'] = Number(req.body.coolOn);
-        res.send(tempS) // Show the HTML for the Google homepage. 
-      }
-    });
-  }
-  if ('coolOff' in req.body){
-    var request = require('request');
-    request.post({url:'http://esp8266-webupdate.local/set', body:'coolOff=' + req.body.coolOff}, function (error, response, body) {
-      if (!error && response.statusCode == 200) {
-        tempS['coolOff'] = Number(req.body.coolOff);
-        res.send(tempS) // Show the HTML for the Google homepage. 
-      }
-    });
-  }
-  if ('heatOn' in req.body){
-    var request = require('request');
-    request.post({url:'http://esp8266-webupdate.local/set', body:'heatOn=' + req.body.heatOn}, function (error, response, body) {
-      if (!error && response.statusCode == 200) {
-        tempS['heatOn'] = Number(req.body.heatOn);
-        res.send(tempS) // Show the HTML for the Google homepage. 
-      }
-    });
-  }
-  if ('heatOff' in req.body){
-    var request = require('request');
-    request.post({url:'http://esp8266-webupdate.local/set', body:'heatOff=' + req.body.heatOff}, function (error, response, body) {
-      if (!error && response.statusCode == 200) {
-        tempS['heatOff'] = Number(req.body.heatOff);
-        res.send(tempS) // Show the HTML for the Google homepage. 
-      }
-    });
-  }
-})
-
-app.post('/update', function(req,res){
-  for(x in req.body){
-    switch (x){
-      case 'S':
-        io.emit('S', req.body[x]);
-        if (req.body[x] == 'CoolOn' || req.body[x] == 'Cooling' ){
-          spWrite.write('cool=1\n');
-          spWrite.write('fan=1\n');
-        };
-        if (req.body[x] == 'HeatOn' || req.body[x] == 'Heating'){
-          spWrite.write('heat=1\n');
-        };
-        if (req.body[x] == 'FanWait'){
-          spWrite.write('cool=0\n');
-          spWrite.write('fan=1\n');
-        };
-        if (req.body[x] == 'Wait' || req.body[x] == 'Ready'){
-          spWrite.write('cool=0\n');
-          spWrite.write('heat=0\n');
-          spWrite.write('fan=0\n');
-        }
-        if (req.body[x] == 'Heating' || req.body[x] == 'HeatOn'){
-          helper.incCounter(leveldb, 'HEM!heat!15m!', helper.time15m(), 0.5);
-          helper.incCounter(leveldb, 'HEM!heat!60m!', helper.time60m(), 0.5);
-          helper.incCounter(leveldb, 'HEM!heat!24h!', helper.time24h(), 0.5);
-          helper.incCounter(leveldb, 'HEM!heat!28d!', helper.time28d(), 0.5);
-          child.stdin.write('update ' + __dirname + '/hem-heat.rrd N:100\n');
-        } else {
-          child.stdin.write('update ' + __dirname + '/hem-heat.rrd N:0\n');
-        }
-        if (req.body[x] == 'Cooling' || req.body[x] == 'CoolOn'){
-          helper.incCounter(leveldb, 'HEM!cool!15m!', helper.time15m(), 0.5);
-          helper.incCounter(leveldb, 'HEM!cool!60m!', helper.time60m(), 0.5);
-          helper.incCounter(leveldb, 'HEM!cool!24h!', helper.time24h(), 0.5);
-          helper.incCounter(leveldb, 'HEM!cool!28d!', helper.time28d(), 0.5);
-          child.stdin.write('update ' + __dirname + '/hem-cool.rrd N:100\n');
-        } else {
-          child.stdin.write('update ' + __dirname + '/hem-cool.rrd N:0\n');
-        }
-        break;
-      case 'W':
-        var data = Number(req.body[x]);
-        io.emit('W', data);
-        watchDog = Date.now();
-        child.stdin.write('update ' + __dirname + '/hem-w.rrd N:' + data + '\n');
-        helper.incCounter(leveldb, 'HEM!kWh!15m!', helper.time15m(), 0.002);
-        helper.incCounter(leveldb, 'HEM!kWh!60m!', helper.time60m(), 0.002);
-        helper.incCounter(leveldb, 'HEM!kWh!24h!', helper.time24h(), 0.002);
-        helper.incCounter(leveldb, 'HEM!kWh!28d!', helper.time28d(), 0.002);
-        helper.storeAvg(leveldb, 'HEM!W!15m!', helper.time15m(), data);
-        helper.storeAvg(leveldb, 'HEM!W!60m!', helper.time60m(), data);
-        helper.storeAvg(leveldb, 'HEM!W!24h!', helper.time24h(), data);
-        helper.storeAvg(leveldb, 'HEM!W!28d!', helper.time28d(), data);
-        leveldb.get('HEM!kWh!28d!' + helper.time28d(), function (err, value){
-          if (err) {
-            if (err.notFound) {
-              // handle a 'NotFoundError' here
-              io.emit('kWh', 0);
-              return;
-            }
-          // I/O or other error, pass it up the callback chain
-          return callback(err);
-          } else {
-            io.emit('kWh', JSON.parse(value)[1]);
-          }
-        });
-        break;
-
-      case 'T':
-        var data = Number(req.body[x]);
-        tempS['T'] = data;
-        io.emit('T', data);
-        child.stdin.write('update ' + __dirname + '/hem-in.rrd N:' + 
-          data + '\n');
-        helper.storeAvg(leveldb, 'HEM!In!15m!', helper.time15m(), data);
-        helper.storeAvg(leveldb, 'HEM!In!60m!', helper.time60m(), data);
-        helper.storeAvg(leveldb, 'HEM!In!24h!', helper.time24h(), data);
-        helper.storeAvg(leveldb, 'HEM!In!28d!', helper.time28d(), data);
-        break;
-
-      case '289C653F03000027':
-        var data = Number(req.body[x]);
-        tempS['OUT'] = data;
-        io.emit('289C653F03000027', data);
-        child.stdin.write('update ' + __dirname + '/hem-out.rrd N:' + 
-          data + '\n');
-        helper.storeAvg(leveldb, 'HEM!Out!15m!', helper.time15m(), data);
-        helper.storeAvg(leveldb, 'HEM!Out!60m!', helper.time60m(), data);
-        helper.storeAvg(leveldb, 'HEM!Out!24h!', helper.time24h(), data);
-        helper.storeAvg(leveldb, 'HEM!Out!28d!', helper.time28d(), data);
-        break;
-
-      case 'DEW':
-        var data = Number(req.body[x]);
-        tempS['DEW'] = data;
-        io.emit('DEW', data);
-        child.stdin.write('update ' + __dirname + '/hem-dew.rrd N:' + 
-          data + '\n');
-        break;
-
-      case 'RH':
-        var data = Number(req.body[x]);
-        tempS['RH'] = data;
-        io.emit('RH', data);
-        child.stdin.write('update ' + __dirname + '/hem-rh.rrd N:' + 
-          data + '\n');
-        break;
-
-      case '2809853F030000A7':
-        var data = Number(req.body[x]);
-        io.emit('2809853F030000A7', data);
-        child.stdin.write('update ' + __dirname + '/hem-upper.rrd N:' + 
-          data + '\n');
-        helper.storeAvg(leveldb, 'HEM!Upper!15m!', helper.time15m(), data);
-        helper.storeAvg(leveldb, 'HEM!Upper!60m!', helper.time60m(), data);
-        helper.storeAvg(leveldb, 'HEM!Upper!24h!', helper.time24h(), data);
-        helper.storeAvg(leveldb, 'HEM!Upper!28d!', helper.time28d(), data);
-        break;
-
-      case '2813513F03000072':
-        var data = Number(req.body[x]);
-        io.emit('2813513F03000072', data);
-        child.stdin.write('update ' + __dirname + '/hem-lower.rrd N:' + 
-          data + '\n');
-        helper.storeAvg(leveldb, 'HEM!Lower!15m!', helper.time15m(), data);
-        helper.storeAvg(leveldb, 'HEM!Lower!60m!', helper.time60m(), data);
-        helper.storeAvg(leveldb, 'HEM!Lower!24h!', helper.time24h(), data);
-        helper.storeAvg(leveldb, 'HEM!Lower!28d!', helper.time28d(), data);
-        break;
-
-      case '2823583F0300006C':
-        var data = Number(req.body[x]);
-        io.emit('2823583F0300006C', data);
-        child.stdin.write('update ' + __dirname + '/hem-achigh.rrd N:' + 
-          data + '\n');
-        break;
-
-      case '28AE3A3F0300005E':
-        var data = Number(req.body[x]);
-        io.emit('28AE3A3F0300005E', data);
-        child.stdin.write('update ' + __dirname + '/hem-aclow.rrd N:' + 
-          data + '\n');
-        break;
-
-      case 'GPM':
-        var data = Number(req.body[x]);
-        io.emit('GPM', data);
-        child.stdin.write('update ' + __dirname + '/hem-gpm.rrd N:' + 
-          data + '\n');
-        helper.incCounter(leveldb, 'HEM!Gal!15m!', helper.time15m(), 0.25);
-        helper.incCounter(leveldb, 'HEM!Gal!60m!', helper.time60m(), 0.25);
-        helper.incCounter(leveldb, 'HEM!Gal!24h!', helper.time24h(), 0.25);
-        helper.incCounter(leveldb, 'HEM!Gal!28d!', helper.time28d(), 0.25);
-        helper.storeAvg(leveldb, 'HEM!GPM!15m!', helper.time15m(), data);
-        helper.storeAvg(leveldb, 'HEM!GPM!60m!', helper.time60m(), data);
-        helper.storeAvg(leveldb, 'HEM!GPM!24h!', helper.time24h(), data);
-        helper.storeAvg(leveldb, 'HEM!GPM!28d!', helper.time28d(), data);
-        leveldb.get('HEM!Gal!28d!' + helper.time28d(), function (err, value){
-          if (err) {
-            if (err.notFound) {
-              // handle a 'NotFoundError' here
-              io.emit('Gal', 0);
-              return;
-            }
-          // I/O or other error, pass it up the callback chain
-          return callback(err);
-          } else {
-            io.emit('Gal', JSON.parse(value)[1]);
-          }
-        });
-        break;
-      }; 
+    client.publish('hvac/coolOn', Number(req.body.coolOn).toString());
+    setTimeout(function(){res.send(tempS)}, 250);
     }
-  res.send();
+
+  if ('coolOff' in req.body){
+    client.publish('hvac/coolOff', Number(req.body.coolOff).toString());
+    setTimeout(function(){res.send(tempS)}, 250);
+    }
+  if ('heatOn' in req.body){
+    client.publish('hvac/heatOn', Number(req.body.heatOn).toString());
+    setTimeout(function(){res.send(tempS)}, 250);
+    }
+  if ('heatOff' in req.body){
+    client.publish('hvac/heatOff', Number(req.body.heatOff).toString());
+    setTimeout(function(){res.send(tempS)}, 250);
+    }
 });
 
 var grpmap = [];
@@ -466,3 +259,183 @@ setInterval(function (){
 //    process.exit(1);
 //  }
 //}, 300000);
+
+
+var mqtt    = require('mqtt');
+var client  = mqtt.connect('mqtt://localhost', {clientId: 'raspberrypi'});
+ 
+client.on('connect', function () {
+  client.subscribe('#');
+});
+ 
+client.on('message', function (topic, message) {
+  switch (topic){
+    case 'power/W':
+      var data = Number(message.toString());
+      io.emit('W', data);
+      watchDog = Date.now();
+      child.stdin.write('update ' + __dirname + '/hem-w.rrd N:' + data + '\n');
+      helper.incCounter(leveldb, 'HEM!kWh!15m!', helper.time15m(), 0.002);
+      helper.incCounter(leveldb, 'HEM!kWh!60m!', helper.time60m(), 0.002);
+      helper.incCounter(leveldb, 'HEM!kWh!24h!', helper.time24h(), 0.002);
+      helper.incCounter(leveldb, 'HEM!kWh!28d!', helper.time28d(), 0.002);
+      helper.storeAvg(leveldb, 'HEM!W!15m!', helper.time15m(), data);
+      helper.storeAvg(leveldb, 'HEM!W!60m!', helper.time60m(), data);
+      helper.storeAvg(leveldb, 'HEM!W!24h!', helper.time24h(), data);
+      helper.storeAvg(leveldb, 'HEM!W!28d!', helper.time28d(), data);
+      leveldb.get('HEM!kWh!28d!' + helper.time28d(), function (err, value){
+        if (err) {
+          if (err.notFound) {
+            // handle a 'NotFoundError' here
+            io.emit('kWh', 0);
+            client.publish('power/kWh', Number(0).toString());
+            return;
+          }
+        // I/O or other error, pass it up the callback chain
+        return callback(err);
+        } else {
+          io.emit('kWh', JSON.parse(value)[1]);
+          client.publish('power/kWh', JSON.parse(value)[1].toString());
+        }
+      });
+      break;
+    case 'water/GPM':
+      var data = Number(message.toString());
+      io.emit('GPM', data);
+      child.stdin.write('update ' + __dirname + '/hem-gpm.rrd N:' + 
+        data + '\n');
+      helper.incCounter(leveldb, 'HEM!Gal!15m!', helper.time15m(), 0.25);
+      helper.incCounter(leveldb, 'HEM!Gal!60m!', helper.time60m(), 0.25);
+      helper.incCounter(leveldb, 'HEM!Gal!24h!', helper.time24h(), 0.25);
+      helper.incCounter(leveldb, 'HEM!Gal!28d!', helper.time28d(), 0.25);
+      helper.storeAvg(leveldb, 'HEM!GPM!15m!', helper.time15m(), data);
+      helper.storeAvg(leveldb, 'HEM!GPM!60m!', helper.time60m(), data);
+      helper.storeAvg(leveldb, 'HEM!GPM!24h!', helper.time24h(), data);
+      helper.storeAvg(leveldb, 'HEM!GPM!28d!', helper.time28d(), data);
+      leveldb.get('HEM!Gal!28d!' + helper.time28d(), function (err, value){
+        if (err) {
+          if (err.notFound) {
+            // handle a 'NotFoundError' here
+            io.emit('Gal', 0);
+            client.publish('water/Gal', Number(0).toString());
+            return;
+          }
+        // I/O or other error, pass it up the callback chain
+        return callback(err);
+        } else {
+          io.emit('Gal', JSON.parse(value)[1]);
+          client.publish('water/Gal', JSON.parse(value)[1].toString());
+        }
+      });
+      break;
+    case 'temp/tempF':
+      var data = Number(message.toString());
+      tempS['T'] = data;
+      io.emit('T', data);
+      child.stdin.write('update ' + __dirname + '/hem-in.rrd N:' + 
+        data + '\n');
+      helper.storeAvg(leveldb, 'HEM!In!15m!', helper.time15m(), data);
+      helper.storeAvg(leveldb, 'HEM!In!60m!', helper.time60m(), data);
+      helper.storeAvg(leveldb, 'HEM!In!24h!', helper.time24h(), data);
+      helper.storeAvg(leveldb, 'HEM!In!28d!', helper.time28d(), data);
+      break;
+    case 'temp/dewF':
+      var data = Number(message.toString());
+      tempS['DEW'] = data;
+      io.emit('DEW', data);
+      child.stdin.write('update ' + __dirname + '/hem-dew.rrd N:' + 
+        data + '\n');
+      break;
+    case 'temp/rh':
+      var data = Number(message.toString());
+      tempS['RH'] = data;
+      io.emit('RH', data);
+      child.stdin.write('update ' + __dirname + '/hem-rh.rrd N:' + 
+        data + '\n');
+      break;
+    case 'temp/289c653f03000027':
+      var data = Number(message.toString());
+      tempS['OUT'] = data;
+      io.emit('289C653F03000027', data);
+      child.stdin.write('update ' + __dirname + '/hem-out.rrd N:' + 
+        data + '\n');
+      helper.storeAvg(leveldb, 'HEM!Out!15m!', helper.time15m(), data);
+      helper.storeAvg(leveldb, 'HEM!Out!60m!', helper.time60m(), data);
+      helper.storeAvg(leveldb, 'HEM!Out!24h!', helper.time24h(), data);
+      helper.storeAvg(leveldb, 'HEM!Out!28d!', helper.time28d(), data);
+      break;
+
+    case 'temp/2809853f030000a7':
+      var data = Number(message.toString());
+      io.emit('2809853F030000A7', data);
+      child.stdin.write('update ' + __dirname + '/hem-upper.rrd N:' + 
+        data + '\n');
+      helper.storeAvg(leveldb, 'HEM!Upper!15m!', helper.time15m(), data);
+      helper.storeAvg(leveldb, 'HEM!Upper!60m!', helper.time60m(), data);
+      helper.storeAvg(leveldb, 'HEM!Upper!24h!', helper.time24h(), data);
+      helper.storeAvg(leveldb, 'HEM!Upper!28d!', helper.time28d(), data);
+      break;
+
+    case 'temp/2813513f03000072':
+      var data = Number(message.toString());
+      io.emit('2813513F03000072', data);
+      child.stdin.write('update ' + __dirname + '/hem-lower.rrd N:' + 
+        data + '\n');
+      helper.storeAvg(leveldb, 'HEM!Lower!15m!', helper.time15m(), data);
+      helper.storeAvg(leveldb, 'HEM!Lower!60m!', helper.time60m(), data);
+      helper.storeAvg(leveldb, 'HEM!Lower!24h!', helper.time24h(), data);
+      helper.storeAvg(leveldb, 'HEM!Lower!28d!', helper.time28d(), data);
+      break;
+
+    case 'temp/2823583f0300006c':
+      var data = Number(message.toString());
+      io.emit('2823583F0300006C', data);
+      child.stdin.write('update ' + __dirname + '/hem-achigh.rrd N:' + 
+        data + '\n');
+      break;
+
+    case 'temp/28ae3a3f0300005e':
+      var data = Number(message.toString());
+      io.emit('28AE3A3F0300005E', data);
+      child.stdin.write('update ' + __dirname + '/hem-aclow.rrd N:' + 
+        data + '\n');
+      break;
+    case 'hvac/coolOn':
+      var data = Number(message.toString());
+      tempS['coolOn'] = data;
+      break;
+    case 'hvac/coolOff':
+      var data = Number(message.toString());
+      tempS['coolOff'] = data;
+      break;
+    case 'hvac/heatOn':
+      var data = Number(message.toString());
+      tempS['heatOn'] = data;
+      break;
+    case 'hvac/heatOff':
+      var data = Number(message.toString());
+      tempS['heatOff'] = data;
+      break;
+    case 'hvac/state':
+      io.emit('S', message.toString());
+      if (message.toString() == 'Heating' || message.toString() == 'HeatOn'){
+        helper.incCounter(leveldb, 'HEM!heat!15m!', helper.time15m(), 0.5);
+        helper.incCounter(leveldb, 'HEM!heat!60m!', helper.time60m(), 0.5);
+        helper.incCounter(leveldb, 'HEM!heat!24h!', helper.time24h(), 0.5);
+        helper.incCounter(leveldb, 'HEM!heat!28d!', helper.time28d(), 0.5);
+        child.stdin.write('update ' + __dirname + '/hem-heat.rrd N:100\n');
+      } else {
+        child.stdin.write('update ' + __dirname + '/hem-heat.rrd N:0\n');
+      }
+      if (message.toString() == 'Cooling' || message.toString() == 'CoolOn'){
+        helper.incCounter(leveldb, 'HEM!cool!15m!', helper.time15m(), 0.5);
+        helper.incCounter(leveldb, 'HEM!cool!60m!', helper.time60m(), 0.5);
+        helper.incCounter(leveldb, 'HEM!cool!24h!', helper.time24h(), 0.5);
+        helper.incCounter(leveldb, 'HEM!cool!28d!', helper.time28d(), 0.5);
+        child.stdin.write('update ' + __dirname + '/hem-cool.rrd N:100\n');
+      } else {
+        child.stdin.write('update ' + __dirname + '/hem-cool.rrd N:0\n');
+      }
+      break;
+  }
+});
