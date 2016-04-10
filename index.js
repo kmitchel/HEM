@@ -21,15 +21,10 @@ var helper = require('./helper.js');
 var watchDog = Date.now();
 var watchDogCount = 0;
 
-var tempS = {};
-
 //Webserver
 var express = require('express');
 var app = express();
 var server = require('http').Server(app);
-var io = require('socket.io')(server);
-var bodyParser = require('body-parser')
-app.use(bodyParser.urlencoded({ extended: false }));
 server.listen(80);
 
 var spawn = require('child_process').spawn;
@@ -115,7 +110,6 @@ function graph(req, res){
     case 'temp':
       arg.push('DEF:heat=' + __dirname + '/hem-heat.rrd:heat:AVERAGE');
       arg.push('DEF:cool=' + __dirname + '/hem-cool.rrd:cool:AVERAGE');
-//      arg.push('AREA:heat#cccccc:Heater');
       arg.push('DEF:rh=' + __dirname + '/hem-rh.rrd:rh:AVERAGE');
       arg.push('LINE1:rh#00ff00:Relative_Humidity');
       arg.push('DEF:dew=' + __dirname + '/hem-dew.rrd:dew:AVERAGE');
@@ -159,34 +153,6 @@ function graph(req, res){
   child.stdout.pipe(res);
 }
 app.get('/graph/:id', graph);
-
-app.get('/hvacstatus', function (req, res){
-  client.publish('hvac/coolOn', '?');
-  client.publish('hvac/coolOff', '?');
-  client.publish('hvac/heatOn', '?');
-  client.publish('hvac/heatOff', '?');
-  setTimeout(function(){res.send(tempS)}, 250);
-});
-
-app.post('/hvacstatus', function (req, res){
-  if ('coolOn' in req.body){
-    client.publish('hvac/coolOn', Number(req.body.coolOn).toString());
-    setTimeout(function(){res.send(tempS)}, 250);
-    }
-
-  if ('coolOff' in req.body){
-    client.publish('hvac/coolOff', Number(req.body.coolOff).toString());
-    setTimeout(function(){res.send(tempS)}, 250);
-    }
-  if ('heatOn' in req.body){
-    client.publish('hvac/heatOn', Number(req.body.heatOn).toString());
-    setTimeout(function(){res.send(tempS)}, 250);
-    }
-  if ('heatOff' in req.body){
-    client.publish('hvac/heatOff', Number(req.body.heatOff).toString());
-    setTimeout(function(){res.send(tempS)}, 250);
-    }
-});
 
 var grpmap = [];
   grpmap.kWh='kWh';
@@ -272,7 +238,6 @@ client.on('message', function (topic, message) {
   switch (topic){
     case 'power/W':
       var data = Number(message.toString());
-      io.emit('W', data);
       watchDog = Date.now();
       child.stdin.write('update ' + __dirname + '/hem-w.rrd N:' + data + '\n');
       helper.incCounter(leveldb, 'HEM!kWh!15m!', helper.time15m(), 0.002);
@@ -287,21 +252,18 @@ client.on('message', function (topic, message) {
         if (err) {
           if (err.notFound) {
             // handle a 'NotFoundError' here
-            io.emit('kWh', 0);
             client.publish('power/kWh', Number(0).toString());
             return;
           }
         // I/O or other error, pass it up the callback chain
         return callback(err);
         } else {
-          io.emit('kWh', JSON.parse(value)[1]);
           client.publish('power/kWh', JSON.parse(value)[1].toString());
         }
       });
       break;
     case 'water/GPM':
       var data = Number(message.toString());
-      io.emit('GPM', data);
       child.stdin.write('update ' + __dirname + '/hem-gpm.rrd N:' + 
         data + '\n');
       helper.incCounter(leveldb, 'HEM!Gal!15m!', helper.time15m(), 0.25);
@@ -316,22 +278,18 @@ client.on('message', function (topic, message) {
         if (err) {
           if (err.notFound) {
             // handle a 'NotFoundError' here
-            io.emit('Gal', 0);
             client.publish('water/Gal', Number(0).toString());
             return;
           }
         // I/O or other error, pass it up the callback chain
         return callback(err);
         } else {
-          io.emit('Gal', JSON.parse(value)[1]);
           client.publish('water/Gal', JSON.parse(value)[1].toString());
         }
       });
       break;
     case 'temp/tempF':
       var data = Number(message.toString());
-      tempS['T'] = data;
-      io.emit('T', data);
       child.stdin.write('update ' + __dirname + '/hem-in.rrd N:' + 
         data + '\n');
       helper.storeAvg(leveldb, 'HEM!In!15m!', helper.time15m(), data);
@@ -341,22 +299,16 @@ client.on('message', function (topic, message) {
       break;
     case 'temp/dewF':
       var data = Number(message.toString());
-      tempS['DEW'] = data;
-      io.emit('DEW', data);
       child.stdin.write('update ' + __dirname + '/hem-dew.rrd N:' + 
         data + '\n');
       break;
     case 'temp/rh':
       var data = Number(message.toString());
-      tempS['RH'] = data;
-      io.emit('RH', data);
       child.stdin.write('update ' + __dirname + '/hem-rh.rrd N:' + 
         data + '\n');
       break;
     case 'temp/289c653f03000027':
       var data = Number(message.toString());
-      tempS['OUT'] = data;
-      io.emit('289C653F03000027', data);
       child.stdin.write('update ' + __dirname + '/hem-out.rrd N:' + 
         data + '\n');
       helper.storeAvg(leveldb, 'HEM!Out!15m!', helper.time15m(), data);
@@ -367,7 +319,6 @@ client.on('message', function (topic, message) {
 
     case 'temp/2809853f030000a7':
       var data = Number(message.toString());
-      io.emit('2809853F030000A7', data);
       child.stdin.write('update ' + __dirname + '/hem-upper.rrd N:' + 
         data + '\n');
       helper.storeAvg(leveldb, 'HEM!Upper!15m!', helper.time15m(), data);
@@ -378,7 +329,6 @@ client.on('message', function (topic, message) {
 
     case 'temp/2813513f03000072':
       var data = Number(message.toString());
-      io.emit('2813513F03000072', data);
       child.stdin.write('update ' + __dirname + '/hem-lower.rrd N:' + 
         data + '\n');
       helper.storeAvg(leveldb, 'HEM!Lower!15m!', helper.time15m(), data);
@@ -389,35 +339,17 @@ client.on('message', function (topic, message) {
 
     case 'temp/2823583f0300006c':
       var data = Number(message.toString());
-      io.emit('2823583F0300006C', data);
       child.stdin.write('update ' + __dirname + '/hem-achigh.rrd N:' + 
         data + '\n');
       break;
 
     case 'temp/28ae3a3f0300005e':
       var data = Number(message.toString());
-      io.emit('28AE3A3F0300005E', data);
       child.stdin.write('update ' + __dirname + '/hem-aclow.rrd N:' + 
         data + '\n');
       break;
-    case 'hvac/coolOn':
-      var data = Number(message.toString());
-      tempS['coolOn'] = data;
-      break;
-    case 'hvac/coolOff':
-      var data = Number(message.toString());
-      tempS['coolOff'] = data;
-      break;
-    case 'hvac/heatOn':
-      var data = Number(message.toString());
-      tempS['heatOn'] = data;
-      break;
-    case 'hvac/heatOff':
-      var data = Number(message.toString());
-      tempS['heatOff'] = data;
-      break;
+
     case 'hvac/state':
-      io.emit('S', message.toString());
       if (message.toString() == 'Heating' || message.toString() == 'HeatOn'){
         helper.incCounter(leveldb, 'HEM!heat!15m!', helper.time15m(), 0.5);
         helper.incCounter(leveldb, 'HEM!heat!60m!', helper.time60m(), 0.5);

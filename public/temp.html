@@ -105,108 +105,153 @@
     <!-- Placed at the end of the document so the pages load faster -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
     <script src="js/bootstrap.min.js"></script>
-  <script src="/socket.io/socket.io.js"></script>
+    <script src="js/mqttws31.js"></script>
+
 <script>
 $(function(){
 
-    function time(){
-      return Math.floor(Date.now()/1000/30)*60*1000;
-    }
+var temp =[];
 
-    var iosocket = io.connect();
-    iosocket.on('connect', function(){
-      iosocket.on('DEW', function(message){
-        $('#dew').html(message);
-      });
-      iosocket.on('RH', function(message){
-        $('#rh').html(message);
-      });
-      iosocket.on('T', function(message){
-        $('#temp').html(message);
-      });
-      iosocket.on('289C653F03000027', function(message){
-        $('#out').html(message);
-      });
-      iosocket.on('S', function(message){
-        $('#state').html(message);
-      });
+  // Create a client instance
+client = new Paho.MQTT.Client(location.hostname, Number(9001), "clientId");
 
-    });
+// set callback handlers
+client.onConnectionLost = onConnectionLost;
+client.onMessageArrived = onMessageArrived;
 
-    var tempS;
+// connect the client
+client.connect({onSuccess:onConnect});
 
-    $.getJSON('/hvacstatus',function(data){
-      tempS = data;
-      $('#coolOn').html(data.coolOn);
-      $('#coolOff').html(data.coolOff);
-      $('#heatOff').html(data.heatOff);
-      $('#heatOn').html(data.heatOn);
-      $('#rh').html(data.RH);
-      $('#temp').html(data.T);
-      $('#dew').html(data.DEW);
-      $('#out').html(data.OUT);
-    });
+
+// called when the client connects
+function onConnect() {
+  // Once a connection has been made, make a subscription and send a message.
+  console.log("onConnect");
+  client.subscribe("hvac/+");
+  client.subscribe("temp/tempF");
+  client.subscribe("temp/dewF");
+  client.subscribe("temp/rh");
+
+  message = new Paho.MQTT.Message("?");
+  message.destinationName = "hvac/coolOn";
+  client.send(message);
+  message.destinationName = "hvac/coolOff";
+  client.send(message);
+  message.destinationName = "hvac/heatOn";
+  client.send(message);
+  message.destinationName = "hvac/heatOff";
+  client.send(message);
+}
+
+// called when the client loses its connection
+function onConnectionLost(responseObject) {
+  if (responseObject.errorCode !== 0) {
+    console.log("onConnectionLost:"+responseObject.errorMessage);
+  }
+}
+
+// called when a message arrives
+function onMessageArrived(message) {
+
+temp[message.destinationName] = message.payloadString;
+
+  switch(message.destinationName){
+    case 'hvac/state':
+      $('#state').html(message.payloadString);
+      break;
+    case 'temp/tempF':
+      $('#temp').html(message.payloadString);
+      break;
+    case 'temp/dewF':
+      $('#dew').html(message.payloadString);
+      break;
+    case 'temp/rh':
+      $('#rh').html(message.payloadString);
+      break;
+    case 'hvac/coolOn':
+      $('#coolOn').html(message.payloadString);
+      break;
+    case 'hvac/coolOff':
+      $('#coolOff').html(message.payloadString);
+      break;
+    case 'hvac/heatOn':
+      $('#heatOn').html(message.payloadString);
+      break;
+    case 'hvac/heatOff':
+      $('#heatOff').html(message.payloadString);
+      break;
+  }
+
+}
 
     $('#coolOnDown').click(function(){
-      tempS.coolOn -= 1;
-      $.post('/hvacstatus' ,{coolOn: tempS.coolOn}, function(data){
-        tempS=data;
-        $('#coolOn').html(tempS.coolOn);
-      });
+        message = new Paho.MQTT.Message((temp['hvac/coolOn'] - 1).toString());
+        message.destinationName = "hvac/coolOn";
+        client.send(message);
+        message = new Paho.MQTT.Message('?');
+        message.destinationName = "hvac/coolOn";
+        client.send(message);
     });
 
     $('#coolOnUp').click(function(){
-      tempS.coolOn += 1;
-      $.post('/hvacstatus', {coolOn: tempS.coolOn}, function(data){
-        tempS=data;
-        $('#coolOn').html(tempS.coolOn);
-      });
+        message = new Paho.MQTT.Message((Number(temp['hvac/coolOn']) + 1).toString());
+        message.destinationName = "hvac/coolOn";
+        client.send(message);
+        message = new Paho.MQTT.Message('?');
+        message.destinationName = "hvac/coolOn";
+        client.send(message);
     });
     $('#coolOffDown').click(function(){
-      tempS.coolOff -= 1;
-      $.post('/hvacstatus', {coolOff: tempS.coolOff}, function(data){
-        tempS=data;
-        $('#coolOff').html(tempS.coolOff);
-      });
+        message = new Paho.MQTT.Message((temp['hvac/coolOff'] - 1).toString());
+        message.destinationName = "hvac/coolOff";
+        client.send(message);
+        message = new Paho.MQTT.Message('?');
+        message.destinationName = "hvac/coolOff";
+        client.send(message);
     });
 
     $('#coolOffUp').click(function(){
-      tempS.coolOff += 1;
-      $.post('/hvacstatus', {coolOff: tempS.coolOff}, function(data){
-        tempS=data;
-        $('#coolOff').html(tempS.coolOff);
-      });
+        message = new Paho.MQTT.Message((Number(temp['hvac/coolOff']) + 1).toString());
+        message.destinationName = "hvac/coolOff";
+        client.send(message);
+        message = new Paho.MQTT.Message('?');
+        message.destinationName = "hvac/coolOff";
+        client.send(message);
     });
 
     $('#heatOffDown').click(function(){
-      tempS.heatOff -= 1;
-      $.post('/hvacstatus', {heatOff: tempS.heatOff}, function(data){
-        tempS=data;
-        $('#heatOff').html(tempS.heatOff);
-      });
+        message = new Paho.MQTT.Message((temp['hvac/heatOff'] - 1).toString());
+        message.destinationName = "hvac/heatOff";
+        client.send(message);
+        message = new Paho.MQTT.Message('?');
+        message.destinationName = "hvac/heatOff";
+        client.send(message);
     });
 
     $('#heatOffUp').click(function(){
-      tempS.heatOff += 1;
-      $.post('/hvacstatus', {heatOff: tempS.heatOff}, function(data){
-        tempS=data;
-        $('#heatOff').html(tempS.heatOff);
-      });
+        message = new Paho.MQTT.Message((Number(temp['hvac/heatOff']) + 1).toString());
+        message.destinationName = "hvac/heatOff";
+        client.send(message);
+        message = new Paho.MQTT.Message('?');
+        message.destinationName = "hvac/heatOff";
+        client.send(message);
     });
     $('#heatOnDown').click(function(){
-      tempS.heatOn -= 1;
-      $.post('/hvacstatus', {heatOn: tempS.heatOn}, function(data){
-        tempS=data;
-        $('#heatOn').html(tempS.heatOn);
-      });
+        message = new Paho.MQTT.Message((temp['hvac/heatOn'] - 1).toString());
+        message.destinationName = "hvac/heatOn";
+        client.send(message);
+        message = new Paho.MQTT.Message('?');
+        message.destinationName = "hvac/heatOn";
+        client.send(message);
     });
 
     $('#heatOnUp').click(function(){
-      tempS.heatOn += 1;
-      $.post('/hvacstatus', {heatOn: tempS.heatOn}, function(data){
-        tempS=data;
-        $('#heatOn').html(tempS.heatOn);
-      });
+         message = new Paho.MQTT.Message((Number(temp['hvac/heatOn']) + 1).toString());
+        message.destinationName = "hvac/heatOn";
+        client.send(message);
+        message = new Paho.MQTT.Message('?');
+        message.destinationName = "hvac/heatOn";
+        client.send(message);
     });
 });
 </script>

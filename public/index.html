@@ -4,19 +4,19 @@
   <title>Home Energy Monitor</title>
 </head>
 <body>
-  <span id='power'></span>
-  <span id='kWh'></span>
-  <span id='t'></span>
-  <span id='out'></span>
-  <span id='upper'></span>
-  <span id='lower'></span>
-  <span id='achigh'></span>
-  <span id='aclow'></span>
-  <span id='gal'></span>
-  <span id='gpm'></span>
-  <span id='rh'></span>
-  <span id='dew'></span>
-  <span id='state'></span>
+  <span id='power'></span><br>
+  <span id='kWh'></span><br>
+  <span id='t'></span><br>
+  <span id='out'></span><br>
+  <span id='upper'></span><br>
+  <span id='lower'></span><br>
+  <span id='achigh'></span><br>
+  <span id='aclow'></span><br>
+  <span id='gal'></span><br>
+  <span id='gpm'></span><br>
+  <span id='rh'></span><br>
+  <span id='dew'></span><br>
+  <span id='state'></span><br>
   <img id="watt2" width=100%>
   <br>
   <img id="temp2" width=100%>
@@ -37,7 +37,8 @@
   <br>
   <img id="gpm24" width=100%>
   <script src="http://code.jquery.com/jquery-2.1.0.min.js"></script>
-  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/mqttws31.js"></script>
+
   <script>
   $(function(){
     function time(){
@@ -63,31 +64,58 @@
       loadImg(time());
     });
 
-    var iosocket = io.connect();
-    iosocket.on('connect', function(){
-      iosocket.on('S', function(message){
-        $('#state').html(message + '<br>');
-      });
-      iosocket.on('W', function(message){
-        $('#power').html('Current Power:  ' + message + 'W<br>');
-      });
-      iosocket.on('289C653F03000027', function(message){
-        $('#out').html('Outside Temp:  ' + message + 'F<br>');
-      });
-      iosocket.on('2809853F030000A7', function(message){
-        $('#upper').html('Upper WH Temp:  ' + message + 'F<br>');
-      });
-      iosocket.on('2813513F03000072', function(message){
-        $('#lower').html('Lower WH Temp:  ' + message + 'F<br>');
-      });
-      iosocket.on('2823583F0300006C', function(message){
-        $('#achigh').html('High AC Temp:  ' + message + 'F<br>');
-      });
-      iosocket.on('28AE3A3F0300005E', function(message){
-        $('#aclow').html('Low AC Temp:  ' + message + 'F<br>');
-      });
-      iosocket.on('kWh', function(message){
-        var cost = (message * 0.105 + 19) * 1.07;
+
+client = new Paho.MQTT.Client(location.hostname, Number(9001), "clientId");
+client.connect({onSuccess:onConnect});
+client.onMessageArrived = onMessageArrived;
+
+
+function onConnect() {
+  // Once a connection has been made, make a subscription and send a message.
+  client.subscribe("#");
+}
+
+function onMessageArrived(message) {
+
+  switch(message.destinationName){
+    case 'hvac/state':
+      $('#state').html(message.payloadString);
+      break;
+    case 'power/W':
+      $('#power').html('Current Power: ' + message.payloadString + 'W');
+      break;
+    case 'temp/289c653f03000027':
+      $('#out').html('Outside Temp:  ' + message.payloadString + 'F');
+      break;
+    case 'temp/2809853f030000a7':
+      $('#upper').html('Upper WH Temp:  ' + message.payloadString + 'F');
+      break;
+    case 'temp/2813513f03000072':
+      $('#lower').html('Lower WH Temp:  ' + message.payloadString + 'F');
+      break;
+    case 'temp/2823583f0300006c':
+      $('#achigh').html('High AC Temp:  ' + message.payloadString + 'F');
+      break;
+    case 'temp/28ae3a3f0300005e':
+      $('#aclow').html('Low AC Temp:  ' + message.payloadString + 'F');
+      break;
+    case 'water/Gal':
+      $('#gal').html('Gallons:  ' + message.payloadString);
+      break;
+    case 'water/GPM':
+      $('#gpm').html(message.payloadString + ' GPM');
+    case 'temp/tempF':
+      $('#t').html('Inside Temp: ' + message.payloadString + 'F');
+      break;
+    case 'temp/rh':
+      $('#rh').html('RH: ' + message.payloadString + '%');
+      break;
+    case 'temp/dewF':
+      $('#dew').html('DEW: ' + message.payloadString + 'F');
+      break;
+
+     case 'power/kWh':
+        var cost = (message.payloadString * 0.105 + 19) * 1.07;
 
         var month;
         if (new Date().getDate() > 6){
@@ -99,28 +127,15 @@
         var startOfBillingCycle = new Date(new Date().getFullYear(),month,7).getTime();
         var endOfBillingCycle = new Date(new Date().getFullYear(),month+1,7).getTime();
 
-        var projectedkWh = message / (new Date().getTime() - startOfBillingCycle) * (endOfBillingCycle - startOfBillingCycle);
+        var projectedkWh = message.payloadString / (new Date().getTime() - startOfBillingCycle) * (endOfBillingCycle - startOfBillingCycle);
 
         var projectedCost = (projectedkWh * 0.105 + 19) * 1.07;
 
-        $('#kWh').html(message + ' kWh @ $' + cost.toFixed(2) + '<br>Projected Monthly Cost:  ' + projectedkWh.toFixed(2) + 'kWh @ $' + projectedCost.toFixed(2) +'<br>');
-      });
-      iosocket.on('Gal', function(message){
-        $('#gal').html('Gallons:  ' + message + '<br>');
-      });
-      iosocket.on('GPM', function(message){
-        $('#gpm').html(message + ' GPM<br>');
-      });
-      iosocket.on('T', function(message){
-        $('#t').html('Inside Temp: ' + message + 'F<br>');
-      });
-      iosocket.on('RH', function(message){
-        $('#rh').html('RH: ' + message + '%<br>');
-      });
-      iosocket.on('DEW', function(message){
-        $('#dew').html('DEW: ' + message + 'F<br>');
-      });
-    });
+        $('#kWh').html(message.payloadString + ' kWh @ $' + cost.toFixed(2) + '<br>Projected Monthly Cost:  ' + projectedkWh.toFixed(2) + 'kWh @ $' + projectedCost.toFixed(2));
+
+  }
+}
+
   });
   </script>
 </body>
