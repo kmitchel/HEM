@@ -1,142 +1,167 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-  <title>Home Energy Monitor</title>
+    <title>Home Energy Monitor</title>
 </head>
+
 <body>
-  <span id='power'></span><br>
-  <span id='kWh'></span><br>
-  <span id='t'></span><br>
-  <span id='out'></span><br>
-  <span id='upper'></span><br>
-  <span id='lower'></span><br>
-  <span id='achigh'></span><br>
-  <span id='aclow'></span><br>
-  <span id='gal'></span><br>
-  <span id='gpm'></span><br>
-  <span id='rh'></span><br>
-  <span id='dew'></span><br>
-  <span id='state'></span><br>
-  <img id="watt2" width=100%>
-  <br>
-  <img id="temp2" width=100%>
-  <br>
-  <img id="ac2" width=100%>
-  <br>
-  <img id="wh2" width=100%>
-  <br>
-  <img id="gpm2" width=100%>
-  <br>
-  <img id="watt24" width=100%>
-  <br>
-  <img id="temp24" width=100%>
-  <br>
-  <img id="ac24" width=100%>
-  <br>
-  <img id="wh24" width=100%>
-  <br>
-  <img id="gpm24" width=100%>
-  <script src="http://code.jquery.com/jquery-2.1.0.min.js"></script>
-  <script src="js/mqttws31.js"></script>
+    <span id='power'></span>
+    <br>
+    <span id='kWh'></span>
+    <br>
+    <span id='t'></span>
+    <br>
+    <span id='out'></span>
+    <br>
+    <span id='upper'></span>
+    <br>
+    <span id='lower'></span>
+    <br>
+    <span id='achigh'></span>
+    <br>
+    <span id='aclow'></span>
+    <br>
+    <span id='gal'></span>
+    <br>
+    <span id='gpm'></span>
+    <br>
+    <span id='rh'></span>
+    <br>
+    <span id='dew'></span>
+    <br>
+    <span id='state'></span>
+    <br>
+    <img id="watt2" width=100%>
+    <br>
+    <img id="temp2" width=100%>
+    <br>
+    <img id="ac2" width=100%>
+    <br>
+    <img id="wh2" width=100%>
+    <br>
+    <img id="gpm2" width=100%>
+    <br>
+    <img id="watt24" width=100%>
+    <br>
+    <img id="temp24" width=100%>
+    <br>
+    <img id="ac24" width=100%>
+    <br>
+    <img id="wh24" width=100%>
+    <br>
+    <img id="gpm24" width=100%>
+    <script src="http://code.jquery.com/jquery-2.1.0.min.js"></script>
+    <script src="js/mqttws31.js"></script>
 
-  <script>
-  $(function(){
-    function time(){
-      return Math.floor(Date.now()/1000/30)*60*1000;
-    }
+    <script>
+        $(function() {
+            function time() {
+                return Math.floor(Date.now() / 1000 / 30) * 60 * 1000;
+            }
 
-    function loadImg(temp){
-      $('#watt2').attr("src","/graph/watt?" + temp + '&start=4h');
-      $('#temp2').attr("src","/graph/temp?" + temp + '&start=4h');
-      $('#ac2').attr("src","/graph/ac?" + temp + '&start=4h');
-      $('#wh2').attr("src","/graph/wh?" + temp + '&start=4h');
-      $('#gpm2').attr("src","/graph/gpm?" + temp + '&start=4h');
-      $('#watt24').attr("src","/graph/watt?" + temp + '&start=24h');
-      $('#temp24').attr("src","/graph/temp?" + temp + '&start=24h');
-      $('#ac24').attr("src","/graph/ac?" + temp + '&start=24h');
-      $('#wh24').attr("src","/graph/wh?" + temp + '&start=24h');
-      $('#gpm24').attr("src","/graph/gpm?" + temp + '&start=24h');
-    }
+            function loadImg(temp) {
+                $('#watt2').attr("src", "/graph/watt?" + temp + '&start=4h');
+                $('#temp2').attr("src", "/graph/temp?" + temp + '&start=4h');
+                $('#ac2').attr("src", "/graph/ac?" + temp + '&start=4h');
+                $('#wh2').attr("src", "/graph/wh?" + temp + '&start=4h');
+                $('#gpm2').attr("src", "/graph/gpm?" + temp + '&start=4h');
+                $('#watt24').attr("src", "/graph/watt?" + temp + '&start=24h');
+                $('#temp24').attr("src", "/graph/temp?" + temp + '&start=24h');
+                $('#ac24').attr("src", "/graph/ac?" + temp + '&start=24h');
+                $('#wh24').attr("src", "/graph/wh?" + temp + '&start=24h');
+                $('#gpm24').attr("src", "/graph/gpm?" + temp + '&start=24h');
+            }
 
-    loadImg(time());
+            loadImg(time());
 
-    $('img').click(function(){
-      loadImg(time());
-    });
-
-
-client = new Paho.MQTT.Client(location.hostname, Number(9001), "clientId");
-client.connect({onSuccess:onConnect});
-client.onMessageArrived = onMessageArrived;
+            $('img').click(function() {
+                loadImg(time());
+            });
 
 
-function onConnect() {
-  // Once a connection has been made, make a subscription and send a message.
-  client.subscribe("#");
-}
+            client = new Paho.MQTT.Client(location.hostname, Number(9001), "clientId");
+            client.connect({
+                onSuccess: onConnect,keepAliveInterval: 10
+            });
+            client.onMessageArrived = onMessageArrived;
+            client.onConnectionLost = onConnectionLost;
 
-function onMessageArrived(message) {
 
-  switch(message.destinationName){
-    case 'hvac/state':
-      $('#state').html(message.payloadString);
-      break;
-    case 'power/W':
-      $('#power').html('Current Power: ' + message.payloadString + 'W');
-      break;
-    case 'temp/289c653f03000027':
-      $('#out').html('Outside Temp:  ' + message.payloadString + 'F');
-      break;
-    case 'temp/2809853f030000a7':
-      $('#upper').html('Upper WH Temp:  ' + message.payloadString + 'F');
-      break;
-    case 'temp/2813513f03000072':
-      $('#lower').html('Lower WH Temp:  ' + message.payloadString + 'F');
-      break;
-    case 'temp/2823583f0300006c':
-      $('#achigh').html('High AC Temp:  ' + message.payloadString + 'F');
-      break;
-    case 'temp/28ae3a3f0300005e':
-      $('#aclow').html('Low AC Temp:  ' + message.payloadString + 'F');
-      break;
-    case 'water/Gal':
-      $('#gal').html('Gallons:  ' + message.payloadString);
-      break;
-    case 'water/GPM':
-      $('#gpm').html(message.payloadString + ' GPM');
-    case 'temp/tempF':
-      $('#t').html('Inside Temp: ' + message.payloadString + 'F');
-      break;
-    case 'temp/rh':
-      $('#rh').html('RH: ' + message.payloadString + '%');
-      break;
-    case 'temp/dewF':
-      $('#dew').html('DEW: ' + message.payloadString + 'F');
-      break;
+            function onConnect() {
+                // Once a connection has been made, make a subscription and send a message.
+                client.subscribe("#");
+            }
 
-     case 'power/kWh':
-        var cost = (message.payloadString * 0.105 + 19) * 1.07;
+            function onConnectionLost(responseObject) {
+              if (responseObject.errorCode !== 0) {
+                console.log("onConnectionLost:"+responseObject.errorMessage);
+              }
 
-        var month;
-        if (new Date().getDate() > 6){
-          month = new Date().getMonth();
-        } else {
-          month = new Date().getMonth() - 1;
-        }
+            }
+            function onMessageArrived(message) {
 
-        var startOfBillingCycle = new Date(new Date().getFullYear(),month,7).getTime();
-        var endOfBillingCycle = new Date(new Date().getFullYear(),month+1,7).getTime();
+                switch (message.destinationName) {
+                    case 'hvac/state':
+                        $('#state').html(message.payloadString);
+                        break;
+                    case 'power/W':
+                        $('#power').html('Current Power: ' + message.payloadString + 'W');
+                        break;
+                    case 'temp/289c653f03000027':
+                        $('#out').html('Outside Temp:  ' + message.payloadString + 'F');
+                        break;
+                    case 'temp/2809853f030000a7':
+                        $('#upper').html('Upper WH Temp:  ' + message.payloadString + 'F');
+                        break;
+                    case 'temp/2813513f03000072':
+                        $('#lower').html('Lower WH Temp:  ' + message.payloadString + 'F');
+                        break;
+                    case 'temp/2823583f0300006c':
+                        $('#achigh').html('High AC Temp:  ' + message.payloadString + 'F');
+                        break;
+                    case 'temp/28ae3a3f0300005e':
+                        $('#aclow').html('Low AC Temp:  ' + message.payloadString + 'F');
+                        break;
+                    case 'water/Gal':
+                        $('#gal').html('Gallons:  ' + message.payloadString);
+                        break;
+                    case 'water/GPM':
+                        $('#gpm').html(message.payloadString + ' GPM');
+                    case 'temp/tempF':
+                        $('#t').html('Inside Temp: ' + message.payloadString + 'F');
+                        break;
+                    case 'temp/rh':
+                        $('#rh').html('RH: ' + message.payloadString + '%');
+                        break;
+                    case 'temp/dewF':
+                        $('#dew').html('DEW: ' + message.payloadString + 'F');
+                        break;
 
-        var projectedkWh = message.payloadString / (new Date().getTime() - startOfBillingCycle) * (endOfBillingCycle - startOfBillingCycle);
+                    case 'power/kWh':
+                        var cost = (message.payloadString * 0.105 + 19) * 1.07;
 
-        var projectedCost = (projectedkWh * 0.105 + 19) * 1.07;
+                        var month;
+                        if (new Date().getDate() > 6) {
+                            month = new Date().getMonth();
+                        } else {
+                            month = new Date().getMonth() - 1;
+                        }
 
-        $('#kWh').html(message.payloadString + ' kWh @ $' + cost.toFixed(2) + '<br>Projected Monthly Cost:  ' + projectedkWh.toFixed(2) + 'kWh @ $' + projectedCost.toFixed(2));
+                        var startOfBillingCycle = new Date(new Date().getFullYear(), month, 7).getTime();
+                        var endOfBillingCycle = new Date(new Date().getFullYear(), month + 1, 7).getTime();
 
-  }
-}
+                        var projectedkWh = message.payloadString / (new Date().getTime() - startOfBillingCycle) * (endOfBillingCycle - startOfBillingCycle);
 
-  });
-  </script>
+                        var projectedCost = (projectedkWh * 0.105 + 19) * 1.07;
+
+                        $('#kWh').html(message.payloadString + ' kWh @ $' + cost.toFixed(2) + '<br>Projected Monthly Cost:  ' + projectedkWh.toFixed(2) + 'kWh @ $' + projectedCost.toFixed(2));
+
+                }
+            }
+
+        });
+    </script>
 </body>
+
 </html>

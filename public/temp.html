@@ -120,7 +120,7 @@ client.onConnectionLost = onConnectionLost;
 client.onMessageArrived = onMessageArrived;
 
 // connect the client
-client.connect({onSuccess:onConnect});
+client.connect({onSuccess:onConnect,keepAliveInterval:10});
 
 
 // called when the client connects
@@ -131,6 +131,8 @@ function onConnect() {
   client.subscribe("temp/tempF");
   client.subscribe("temp/dewF");
   client.subscribe("temp/rh");
+  client.subscribe("temp/289c653f03000027");
+
 
   message = new Paho.MQTT.Message("?");
   message.destinationName = "hvac/coolOn";
@@ -179,6 +181,9 @@ temp[message.destinationName] = message.payloadString;
       break;
     case 'hvac/heatOff':
       $('#heatOff').html(message.payloadString);
+      break;
+    case 'temp/289c653f03000027':
+      $('#out').html(message.payloadString);
       break;
   }
 
