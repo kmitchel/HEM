@@ -113,7 +113,7 @@ $(function(){
 var temp =[];
 
   // Create a client instance
-client = new Paho.MQTT.Client(location.hostname, Number(9001), "clientId");
+client = new Paho.MQTT.Client(location.hostname, Number(9001), 'temp_' + Math.random().toString(16).substr(2, 8));
 
 // set callback handlers
 client.onConnectionLost = onConnectionLost;
