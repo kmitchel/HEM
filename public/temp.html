@@ -34,7 +34,8 @@
 
           <div class="masthead clearfix">
             <div class="inner">
-              <h3 class="masthead-brand">Temperature</h3>
+              <div class="alert alert-danger hide" id="disMQTT">MQTT Disconnected</div>
+              <h3 class="masthead-brand">Thermostat</h3>
 <!--               <nav>
                 <ul class="nav masthead-nav">
                   <li class="active"><a href="#">Home</a></li>
@@ -120,7 +121,7 @@ client.onConnectionLost = onConnectionLost;
 client.onMessageArrived = onMessageArrived;
 
 // connect the client
-client.connect({onSuccess:onConnect,keepAliveInterval:10});
+client.connect({onSuccess:onConnect});
 
 
 // called when the client connects
@@ -150,6 +151,12 @@ function onConnectionLost(responseObject) {
   if (responseObject.errorCode !== 0) {
     console.log("onConnectionLost:"+responseObject.errorMessage);
   }
+  $('#disMQTT').removeClass('hide');
+  $('#disMQTT').click(function(){
+    client.connect();
+    $('#disMQTT').addClass('hide');
+    }
+  );
 }
 
 // called when a message arrives

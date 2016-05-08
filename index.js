@@ -239,6 +239,8 @@ client.on('connect', function() {
     client.subscribe('#');
 });
 
+var outAvg, aclowAvg, achighAvg;
+
 client.on('message', function(topic, message) {
     switch (topic) {
         case 'power/W':
@@ -314,6 +316,14 @@ client.on('message', function(topic, message) {
             break;
         case 'temp/289c653f03000027':
             var data = Number(message.toString());
+
+            isNaN(outAvg) ? outAvg = data : outAvg = outAvg;
+
+            outAvg -= outAvg/20;
+            outAvg += Number(data)/20;
+
+            data = outAvg;
+
             child.stdin.write('update ' + __dirname + '/hem-out.rrd N:' +
                 data + '\n');
             helper.storeAvg(leveldb, 'HEM!Out!15m!', helper.time15m(), data);
@@ -344,31 +354,46 @@ client.on('message', function(topic, message) {
 
         case 'temp/2823583f0300006c':
             var data = Number(message.toString());
+
+            isNaN(achighAvg) ? achighAvg = data : achighAvg = achighAvg;
+
+            achighAvg -= achighAvg/20;
+            achighAvg += Number(data)/20;
+
+            data = achighAvg;
             child.stdin.write('update ' + __dirname + '/hem-achigh.rrd N:' +
                 data + '\n');
             break;
 
         case 'temp/28ae3a3f0300005e':
-            var data = Number(message.toString());
+        var data = Number(message.toString());
+
+
+        isNaN(aclowAvg) ? aclowAvg = data : aclowAvg = aclowAvg;
+
+        aclowAvg -= aclowAvg/20;
+        aclowAvg += Number(data)/20;
+
+        data = aclowAvg;
             child.stdin.write('update ' + __dirname + '/hem-aclow.rrd N:' +
                 data + '\n');
             break;
 
         case 'hvac/state':
             if (message.toString() == 'Heating' || message.toString() == 'HeatOn') {
-                helper.incCounter(leveldb, 'HEM!heat!15m!', helper.time15m(), 0.5);
-                helper.incCounter(leveldb, 'HEM!heat!60m!', helper.time60m(), 0.5);
-                helper.incCounter(leveldb, 'HEM!heat!24h!', helper.time24h(), 0.5);
-                helper.incCounter(leveldb, 'HEM!heat!28d!', helper.time28d(), 0.5);
+                helper.incCounter(leveldb, 'HEM!heat!15m!', helper.time15m(), 0.25);
+                helper.incCounter(leveldb, 'HEM!heat!60m!', helper.time60m(), 0.25);
+                helper.incCounter(leveldb, 'HEM!heat!24h!', helper.time24h(), 0.25);
+                helper.incCounter(leveldb, 'HEM!heat!28d!', helper.time28d(), 0.25);
                 child.stdin.write('update ' + __dirname + '/hem-heat.rrd N:100\n');
             } else {
                 child.stdin.write('update ' + __dirname + '/hem-heat.rrd N:0\n');
             }
             if (message.toString() == 'Cooling' || message.toString() == 'CoolOn') {
-                helper.incCounter(leveldb, 'HEM!cool!15m!', helper.time15m(), 0.5);
-                helper.incCounter(leveldb, 'HEM!cool!60m!', helper.time60m(), 0.5);
-                helper.incCounter(leveldb, 'HEM!cool!24h!', helper.time24h(), 0.5);
-                helper.incCounter(leveldb, 'HEM!cool!28d!', helper.time28d(), 0.5);
+                helper.incCounter(leveldb, 'HEM!cool!15m!', helper.time15m(), 0.25);
+                helper.incCounter(leveldb, 'HEM!cool!60m!', helper.time60m(), 0.25);
+                helper.incCounter(leveldb, 'HEM!cool!24h!', helper.time24h(), 0.25);
+                helper.incCounter(leveldb, 'HEM!cool!28d!', helper.time28d(), 0.25);
                 child.stdin.write('update ' + __dirname + '/hem-cool.rrd N:100\n');
             } else {
                 child.stdin.write('update ' + __dirname + '/hem-cool.rrd N:0\n');

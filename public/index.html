@@ -82,7 +82,7 @@
 
             client = new Paho.MQTT.Client(location.hostname, Number(9001), 'index_' + Math.random().toString(16).substr(2, 8));
             client.connect({
-                onSuccess: onConnect,keepAliveInterval: 10
+                onSuccess: onConnect
             });
             client.onMessageArrived = onMessageArrived;
             client.onConnectionLost = onConnectionLost;
