@@ -1,32 +1,46 @@
+<!doctype html>
+
 <html lang="en">
+
 <head>
-  <meta charset="utf-8">
-  <link rel="stylesheet" type="text/css" href="css/chart.css">
+    <meta charset="utf-8">
+
+    <title></title>
+    <meta name="description" content="">
+    <meta name="author" content="kmitchel46725">
+    <link rel="stylesheet" href="css/chart.css">
+
+    <!--[if lt IE 9]>
+    <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
 </head>
 
 <body>
-  <div id="container"></div>
-  <div class='btnGroup type hide'>
-    <button id='kWh' class='selected' data-title='Electricity Consumption' data-unit='kWh'>kWh</button>
-    <button id='W' data-title='Electricity Consumption Rate' data-unit='W'>W</button>
-    <button id='Gal' data-title='Water Consumption' data-unit='Gal'>Gal</button>
-    <button id='GPM' data-title='Water Consumption Rate' data-unit='GPM'>GPM</button>
-    <button id='In' data-title='Inside Temperature' data-unit='F'>Inside Temp</button>
-    <button id='Out' data-title='Outside Temperature' data-unit='F'>Outside Temp</button>
-    <button id='Upper' data-title='Upper Water Heater Temperature' data-unit='F'>Upper Temp</button>
-    <button id='Lower' data-title='Lower Water Heater Temperature' data-unit='F'>Lower Temp</button>
-    <button id='heat' data-title='Heat Runtime' data-unit='M'>Heat Runtime</button>
-    <button id='cool' data-title='Cool Runtime' data-unit='M'>Cool Runtime</button>
-  </div>
-  <div class='btnGroup time hide'>
-    <button id='15m' data-sub='At 15 minute intervals'>15m</button>
-    <button id='60m' class='selected' data-sub='At 1 hour intervals'>60m</button>
-    <button id='24h' data-sub='At 1 day intervals'>24h</button>
-    <button id='28d' data-sub='At 1 month intervals'>28d</button>
-  </div>
-  <script src="http://code.jquery.com/jquery-2.1.0.min.js"></script>
-  <script src="http://code.highcharts.com/highcharts.js"></script>
-  <script src="http://code.highcharts.com/highcharts-more.js"></script>
-  <script src="js/chart.js"></script>
+    <div id="container" style="width:100%; height:100%;"></div>
+    <div class='btnGroup type hide'>
+      <button id='power-kWh' class='selected' data-title='Electricity Consumption' data-unit='kWh'>kWh</button>
+      <button id='power-W' data-title='Electricity Consumption Rate' data-unit='W'>W</button>
+      <button id='water-Gal' data-title='Water Consumption' data-unit='Gal'>Gal</button>
+      <button id='water-GPM' data-title='Water Consumption Rate' data-unit='GPM'>GPM</button>
+      <button id='temp-tempF' data-title='Inside Temperature' data-unit='F'>Inside Temp</button>
+      <button id='temp-dewF' data-title='Inside Dew Point' data-unit='F'>Inside Dew</button>
+      <button id='temp-rh' data-title='Inside Relative Humidity' data-unit='F'>Inside RH</button>
+      <button id='temp-289c653f03000027' data-title='Outside Temperature' data-unit='F'>Outside Temp</button>
+      <button id='temp-2809853f030000a7' data-title='Upper Water Heater Temperature' data-unit='F'>Upper Temp</button>
+      <button id='temp-2813513f03000072' data-title='Lower Water Heater Temperature' data-unit='F'>Lower Temp</button>
+    </div>
+    <div class='btnGroup time hide'>
+      <button id='0' class='selected'>0</button>
+      <button id='5'  data-sub='At 5 minute intervals'>5</button>
+      <button id='15' data-sub='At 15 minute intervals'>15</button>
+      <button id='60' data-sub='At 1 hour intervals'>60</button>
+      <button id='24' data-sub='At 24 hour intervals'>24</button>
+      <button id='28' data-sub='At 1 Month intervals'>28</button>
+    </div>
+    <script src="https://code.jquery.com/jquery-2.2.3.min.js" integrity="sha256-a23g1Nt4dtEYOj7bR+vTu7+T8VP13humZFBJNIYoEJo=" crossorigin="anonymous"></script>
+    <script src="http://code.highcharts.com/highcharts.js"></script>
+    <script src="http://code.highcharts.com/highcharts-more.js"></script>
+    <script src="js/chart.js"></script>
 </body>
+
 </html>

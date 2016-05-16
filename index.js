@@ -1,7 +1,3 @@
-//Update database.
-var level = require('level');
-var leveldb = level(__dirname + '/hemdb');
-
 //Spawn rrdtool child process. Update RRD files.
 var spawn = require('child_process').spawn;
 var child = spawn('rrdtool', ['-']);
@@ -15,11 +11,6 @@ child.stdout.on('data', function(data) {
 child.stderr.on('data', function(data) {
     console.error(data.toString());
 });
-
-var helper = require('./helper.js');
-
-var watchDog = Date.now();
-var watchDogCount = 0;
 
 //Webserver
 var express = require('express');
@@ -193,43 +184,6 @@ app.get('/chart/:grp/:time', function(req, res) {
 
 app.use(express.static(__dirname + '/public'));
 
-setInterval(function() {
-    helper.purgeDB(leveldb, 'HEM!kWh!15m!', helper.time1dAgo());
-    helper.purgeDB(leveldb, 'HEM!W!15m!', helper.time1dAgo());
-    helper.purgeDB(leveldb, 'HEM!Gal!15m!', helper.time1dAgo());
-    helper.purgeDB(leveldb, 'HEM!GPM!15m!', helper.time1dAgo());
-    helper.purgeDB(leveldb, 'HEM!In!15m!', helper.time1dAgo());
-    helper.purgeDB(leveldb, 'HEM!Out!15m!', helper.time1dAgo());
-    helper.purgeDB(leveldb, 'HEM!Upper!15m!', helper.time1dAgo());
-    helper.purgeDB(leveldb, 'HEM!Lower!15m!', helper.time1dAgo());
-    helper.purgeDB(leveldb, 'HEM!cool!15m!', helper.time1dAgo());
-    helper.purgeDB(leveldb, 'HEM!heat!15m!', helper.time1dAgo());
-}, 3600000);
-
-setInterval(function() {
-    helper.purgeDB(leveldb, 'HEM!kWh!60m!', helper.time7dAgo());
-    helper.purgeDB(leveldb, 'HEM!W!60m!', helper.time7dAgo());
-    helper.purgeDB(leveldb, 'HEM!Gal!60m!', helper.time7dAgo());
-    helper.purgeDB(leveldb, 'HEM!GPM!60m!', helper.time7dAgo());
-    helper.purgeDB(leveldb, 'HEM!In!60m!', helper.time7dAgo());
-    helper.purgeDB(leveldb, 'HEM!Out!60m!', helper.time7dAgo());
-    helper.purgeDB(leveldb, 'HEM!Upper!60m!', helper.time7dAgo());
-    helper.purgeDB(leveldb, 'HEM!Lower!60m!', helper.time7dAgo());
-    helper.purgeDB(leveldb, 'HEM!cool!60m!', helper.time7dAgo());
-    helper.purgeDB(leveldb, 'HEM!heat!60m!', helper.time7dAgo());
-}, 3600000);
-
-//setInterval(function (){
-//  if (Date.now() - watchDog > 60000 ){
-//    helper.message('Watchdog expired');
-//    watchDogCount += 1;
-//  }
-//  if (watchDogCount > 2) {
-//    process.exit(1);
-//  }
-//}, 300000);
-
-
 var mqtt = require('mqtt');
 var client = mqtt.connect('mqtt://localhost', {
     clientId: 'raspberrypi'
@@ -239,161 +193,126 @@ client.on('connect', function() {
     client.subscribe('#');
 });
 
-var outAvg, aclowAvg, achighAvg;
+var tempFAvg,dewFAvg,rhAvg,outAvg,upperAvg,lowerAvg,achighAvg,aclowAvg;
 
 client.on('message', function(topic, message) {
     switch (topic) {
         case 'power/W':
             var data = Number(message.toString());
-            watchDog = Date.now();
             child.stdin.write('update ' + __dirname + '/hem-w.rrd N:' + data + '\n');
-            helper.incCounter(leveldb, 'HEM!kWh!15m!', helper.time15m(), 0.002);
-            helper.incCounter(leveldb, 'HEM!kWh!60m!', helper.time60m(), 0.002);
-            helper.incCounter(leveldb, 'HEM!kWh!24h!', helper.time24h(), 0.002);
-            helper.incCounter(leveldb, 'HEM!kWh!28d!', helper.time28d(), 0.002);
-            helper.storeAvg(leveldb, 'HEM!W!15m!', helper.time15m(), data);
-            helper.storeAvg(leveldb, 'HEM!W!60m!', helper.time60m(), data);
-            helper.storeAvg(leveldb, 'HEM!W!24h!', helper.time24h(), data);
-            helper.storeAvg(leveldb, 'HEM!W!28d!', helper.time28d(), data);
-            leveldb.get('HEM!kWh!28d!' + helper.time28d(), function(err, value) {
-                if (err) {
-                    if (err.notFound) {
-                        // handle a 'NotFoundError' here
-                        client.publish('power/kWh', Number(0).toString());
-                        return;
-                    }
-                    // I/O or other error, pass it up the callback chain
-                    return callback(err);
-                } else {
-                    client.publish('power/kWh', JSON.parse(value)[1].toString());
-                }
-            });
             break;
         case 'water/GPM':
             var data = Number(message.toString());
             child.stdin.write('update ' + __dirname + '/hem-gpm.rrd N:' +
                 data + '\n');
-            helper.incCounter(leveldb, 'HEM!Gal!15m!', helper.time15m(), 0.25);
-            helper.incCounter(leveldb, 'HEM!Gal!60m!', helper.time60m(), 0.25);
-            helper.incCounter(leveldb, 'HEM!Gal!24h!', helper.time24h(), 0.25);
-            helper.incCounter(leveldb, 'HEM!Gal!28d!', helper.time28d(), 0.25);
-            helper.storeAvg(leveldb, 'HEM!GPM!15m!', helper.time15m(), data);
-            helper.storeAvg(leveldb, 'HEM!GPM!60m!', helper.time60m(), data);
-            helper.storeAvg(leveldb, 'HEM!GPM!24h!', helper.time24h(), data);
-            helper.storeAvg(leveldb, 'HEM!GPM!28d!', helper.time28d(), data);
-            leveldb.get('HEM!Gal!28d!' + helper.time28d(), function(err, value) {
-                if (err) {
-                    if (err.notFound) {
-                        // handle a 'NotFoundError' here
-                        client.publish('water/Gal', Number(0).toString());
-                        return;
-                    }
-                    // I/O or other error, pass it up the callback chain
-                    return callback(err);
-                } else {
-                    client.publish('water/Gal', JSON.parse(value)[1].toString());
-                }
-            });
             break;
         case 'temp/tempF':
             var data = Number(message.toString());
+
+            if (isNaN(tempFAvg)) {
+                tempFAvg = data;
+            }
+            tempFAvg = 0.9 * tempFAvg + 0.1 * data;
+            data = tempFAvg;
             child.stdin.write('update ' + __dirname + '/hem-in.rrd N:' +
                 data + '\n');
-            helper.storeAvg(leveldb, 'HEM!In!15m!', helper.time15m(), data);
-            helper.storeAvg(leveldb, 'HEM!In!60m!', helper.time60m(), data);
-            helper.storeAvg(leveldb, 'HEM!In!24h!', helper.time24h(), data);
-            helper.storeAvg(leveldb, 'HEM!In!28d!', helper.time28d(), data);
             break;
         case 'temp/dewF':
             var data = Number(message.toString());
+
+            if (isNaN(dewFAvg)) {
+                dewFAvg = data;
+            }
+            dewFAvg = 0.9 * dewFAvg + 0.1 * data;
+            data = dewFAvg;
+
             child.stdin.write('update ' + __dirname + '/hem-dew.rrd N:' +
                 data + '\n');
             break;
         case 'temp/rh':
             var data = Number(message.toString());
+
+            if (isNaN(rhAvg)) {
+                rhAvg = data;
+            }
+            rhAvg = 0.9 * rhAvg + 0.1 * data;
+            data = rhAvg;
+
             child.stdin.write('update ' + __dirname + '/hem-rh.rrd N:' +
                 data + '\n');
             break;
         case 'temp/289c653f03000027':
             var data = Number(message.toString());
 
-            isNaN(outAvg) ? outAvg = data : outAvg = outAvg;
-
-            outAvg -= outAvg/20;
-            outAvg += Number(data)/20;
-
+            if (isNaN(outAvg)) {
+                outAvg = data;
+            }
+            outAvg = 0.9 * outAvg + 0.1 * data;
             data = outAvg;
 
             child.stdin.write('update ' + __dirname + '/hem-out.rrd N:' +
                 data + '\n');
-            helper.storeAvg(leveldb, 'HEM!Out!15m!', helper.time15m(), data);
-            helper.storeAvg(leveldb, 'HEM!Out!60m!', helper.time60m(), data);
-            helper.storeAvg(leveldb, 'HEM!Out!24h!', helper.time24h(), data);
-            helper.storeAvg(leveldb, 'HEM!Out!28d!', helper.time28d(), data);
             break;
 
         case 'temp/2809853f030000a7':
             var data = Number(message.toString());
+
+            if (isNaN(upperAvg)) {
+                upperAvg = data;
+            }
+            upperAvg = 0.9 * upperAvg + 0.1 * data;
+            data = upperAvg;
+
             child.stdin.write('update ' + __dirname + '/hem-upper.rrd N:' +
                 data + '\n');
-            helper.storeAvg(leveldb, 'HEM!Upper!15m!', helper.time15m(), data);
-            helper.storeAvg(leveldb, 'HEM!Upper!60m!', helper.time60m(), data);
-            helper.storeAvg(leveldb, 'HEM!Upper!24h!', helper.time24h(), data);
-            helper.storeAvg(leveldb, 'HEM!Upper!28d!', helper.time28d(), data);
             break;
 
         case 'temp/2813513f03000072':
             var data = Number(message.toString());
+
+            if (isNaN(lowerAvg)) {
+                lowerAvg = data;
+            }
+            lowerAvg = 0.9 * lowerAvg + 0.1 * data;
+            data = lowerAvg;
+
             child.stdin.write('update ' + __dirname + '/hem-lower.rrd N:' +
                 data + '\n');
-            helper.storeAvg(leveldb, 'HEM!Lower!15m!', helper.time15m(), data);
-            helper.storeAvg(leveldb, 'HEM!Lower!60m!', helper.time60m(), data);
-            helper.storeAvg(leveldb, 'HEM!Lower!24h!', helper.time24h(), data);
-            helper.storeAvg(leveldb, 'HEM!Lower!28d!', helper.time28d(), data);
             break;
 
         case 'temp/2823583f0300006c':
             var data = Number(message.toString());
 
-            isNaN(achighAvg) ? achighAvg = data : achighAvg = achighAvg;
-
-            achighAvg -= achighAvg/20;
-            achighAvg += Number(data)/20;
-
+            if (isNaN(achighAvg)) {
+                achighAvg = data;
+            }
+            achighAvg = 0.9 * achighAvg + 0.1 * data;
             data = achighAvg;
+
             child.stdin.write('update ' + __dirname + '/hem-achigh.rrd N:' +
                 data + '\n');
             break;
 
         case 'temp/28ae3a3f0300005e':
-        var data = Number(message.toString());
+            var data = Number(message.toString());
 
+            if (isNaN(aclowAvg)) {
+                aclowAvg = data;
+            }
+            aclowAvg = 0.9 * aclowAvg + 0.1 * data;
+            data = aclowAvg;
 
-        isNaN(aclowAvg) ? aclowAvg = data : aclowAvg = aclowAvg;
-
-        aclowAvg -= aclowAvg/20;
-        aclowAvg += Number(data)/20;
-
-        data = aclowAvg;
             child.stdin.write('update ' + __dirname + '/hem-aclow.rrd N:' +
                 data + '\n');
             break;
 
         case 'hvac/state':
             if (message.toString() == 'Heating' || message.toString() == 'HeatOn') {
-                helper.incCounter(leveldb, 'HEM!heat!15m!', helper.time15m(), 0.25);
-                helper.incCounter(leveldb, 'HEM!heat!60m!', helper.time60m(), 0.25);
-                helper.incCounter(leveldb, 'HEM!heat!24h!', helper.time24h(), 0.25);
-                helper.incCounter(leveldb, 'HEM!heat!28d!', helper.time28d(), 0.25);
                 child.stdin.write('update ' + __dirname + '/hem-heat.rrd N:100\n');
             } else {
                 child.stdin.write('update ' + __dirname + '/hem-heat.rrd N:0\n');
             }
             if (message.toString() == 'Cooling' || message.toString() == 'CoolOn') {
-                helper.incCounter(leveldb, 'HEM!cool!15m!', helper.time15m(), 0.25);
-                helper.incCounter(leveldb, 'HEM!cool!60m!', helper.time60m(), 0.25);
-                helper.incCounter(leveldb, 'HEM!cool!24h!', helper.time24h(), 0.25);
-                helper.incCounter(leveldb, 'HEM!cool!28d!', helper.time28d(), 0.25);
                 child.stdin.write('update ' + __dirname + '/hem-cool.rrd N:100\n');
             } else {
                 child.stdin.write('update ' + __dirname + '/hem-cool.rrd N:0\n');
