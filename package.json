@@ -6,6 +6,7 @@
   "dependencies": {
     "express": "^4.12.4",
     "mongo": "^0.1.0",
+    "mongodb": "^2.1.19",
     "mqtt": "^1.7.4",
     "suncalc": "^1.6.0"
   },

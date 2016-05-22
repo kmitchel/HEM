@@ -193,117 +193,60 @@ client.on('connect', function() {
     client.subscribe('#');
 });
 
-var tempFAvg,dewFAvg,rhAvg,outAvg,upperAvg,lowerAvg,achighAvg,aclowAvg;
-
 client.on('message', function(topic, message) {
     switch (topic) {
         case 'power/W':
-            var data = Number(message.toString());
-            child.stdin.write('update ' + __dirname + '/hem-w.rrd N:' + data + '\n');
+            var dataW = Number(message.toString());
+            child.stdin.write('update ' + __dirname + '/hem-w.rrd N:' + dataW + '\n');
             break;
         case 'water/GPM':
-            var data = Number(message.toString());
+            var dataGPM = Number(message.toString());
             child.stdin.write('update ' + __dirname + '/hem-gpm.rrd N:' +
-                data + '\n');
+                dataGPM + '\n');
             break;
         case 'temp/tempF':
-            var data = Number(message.toString());
-
-            if (isNaN(tempFAvg)) {
-                tempFAvg = data;
-            }
-            tempFAvg = 0.9 * tempFAvg + 0.1 * data;
-            data = tempFAvg;
+            var dataF = Number(message.toString());
             child.stdin.write('update ' + __dirname + '/hem-in.rrd N:' +
-                data + '\n');
+                dataF + '\n');
             break;
         case 'temp/dewF':
-            var data = Number(message.toString());
-
-            if (isNaN(dewFAvg)) {
-                dewFAvg = data;
-            }
-            dewFAvg = 0.9 * dewFAvg + 0.1 * data;
-            data = dewFAvg;
-
+            var dataDew = Number(message.toString());
             child.stdin.write('update ' + __dirname + '/hem-dew.rrd N:' +
-                data + '\n');
+                dataDew + '\n');
             break;
         case 'temp/rh':
-            var data = Number(message.toString());
-
-            if (isNaN(rhAvg)) {
-                rhAvg = data;
-            }
-            rhAvg = 0.9 * rhAvg + 0.1 * data;
-            data = rhAvg;
-
+            var dataRH = Number(message.toString());
             child.stdin.write('update ' + __dirname + '/hem-rh.rrd N:' +
-                data + '\n');
+                dataRH + '\n');
             break;
         case 'temp/289c653f03000027':
-            var data = Number(message.toString());
-
-            if (isNaN(outAvg)) {
-                outAvg = data;
-            }
-            outAvg = 0.9 * outAvg + 0.1 * data;
-            data = outAvg;
-
+            var dataOut = Number(message.toString());
             child.stdin.write('update ' + __dirname + '/hem-out.rrd N:' +
-                data + '\n');
+                dataOut + '\n');
             break;
 
         case 'temp/2809853f030000a7':
-            var data = Number(message.toString());
-
-            if (isNaN(upperAvg)) {
-                upperAvg = data;
-            }
-            upperAvg = 0.9 * upperAvg + 0.1 * data;
-            data = upperAvg;
-
+            var dataUpper = Number(message.toString());
             child.stdin.write('update ' + __dirname + '/hem-upper.rrd N:' +
-                data + '\n');
+                dataUpper + '\n');
             break;
 
         case 'temp/2813513f03000072':
-            var data = Number(message.toString());
-
-            if (isNaN(lowerAvg)) {
-                lowerAvg = data;
-            }
-            lowerAvg = 0.9 * lowerAvg + 0.1 * data;
-            data = lowerAvg;
-
+            var dataLower = Number(message.toString());
             child.stdin.write('update ' + __dirname + '/hem-lower.rrd N:' +
-                data + '\n');
+                dataLower + '\n');
             break;
 
         case 'temp/2823583f0300006c':
-            var data = Number(message.toString());
-
-            if (isNaN(achighAvg)) {
-                achighAvg = data;
-            }
-            achighAvg = 0.9 * achighAvg + 0.1 * data;
-            data = achighAvg;
-
+            var dataACHigh = Number(message.toString());
             child.stdin.write('update ' + __dirname + '/hem-achigh.rrd N:' +
-                data + '\n');
+                dataACHigh + '\n');
             break;
 
         case 'temp/28ae3a3f0300005e':
-            var data = Number(message.toString());
-
-            if (isNaN(aclowAvg)) {
-                aclowAvg = data;
-            }
-            aclowAvg = 0.9 * aclowAvg + 0.1 * data;
-            data = aclowAvg;
-
+            var dataACLow = Number(message.toString());
             child.stdin.write('update ' + __dirname + '/hem-aclow.rrd N:' +
-                data + '\n');
+                dataACLow + '\n');
             break;
 
         case 'hvac/state':

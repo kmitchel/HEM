@@ -56,33 +56,19 @@
             </div>
             <div>
             <p>
-              Cool On
-              <span class="btn btn-default btn-xs glyphicon glyphicon-minus" id="coolOnDown"></span>
-              <span id="coolOn"></span>
-              <span class="btn btn-default btn-xs glyphicon glyphicon-plus" id="coolOnUp"></span>
-              F
-            </p>
-            <p>
-              Cool Off
-              <span class="btn btn-default btn-xs glyphicon glyphicon-minus" id="coolOffDown"></span>
-              <span id="coolOff"></span>
-              <span class="btn btn-default btn-xs glyphicon glyphicon-plus" id="coolOffUp"></span>
+              Cool
+              <span class="btn btn-default btn-xs glyphicon glyphicon-minus" id="coolSetDown"></span>
+              <span id="coolSet"></span>
+              <span class="btn btn-default btn-xs glyphicon glyphicon-plus" id="coolSetUp"></span>
               F
             </p>
           </div>
           <div>
             <p>
-              Heat Off
-              <span class="btn btn-default btn-xs glyphicon glyphicon-minus" id="heatOffDown"></span>
-              <span id="heatOff"></span>
-              <span class="btn btn-default btn-xs glyphicon glyphicon-plus" id="heatOffUp"></span>
-              F
-            </p>
-            <p>
-              Heat On
-              <span class="btn btn-default btn-xs glyphicon glyphicon-minus" id="heatOnDown"></span>
-              <span id="heatOn"></span>
-              <span class="btn btn-default btn-xs glyphicon glyphicon-plus" id="heatOnUp"></span>
+              Heat
+              <span class="btn btn-default btn-xs glyphicon glyphicon-minus" id="heatSetDown"></span>
+              <span id="heatSet"></span>
+              <span class="btn btn-default btn-xs glyphicon glyphicon-plus" id="heatSetUp"></span>
               F
             </p>
             </div>
@@ -136,13 +122,9 @@ function onConnect() {
 
 
   message = new Paho.MQTT.Message("?");
-  message.destinationName = "hvac/coolOn";
+  message.destinationName = "hvac/coolSet";
   client.send(message);
-  message.destinationName = "hvac/coolOff";
-  client.send(message);
-  message.destinationName = "hvac/heatOn";
-  client.send(message);
-  message.destinationName = "hvac/heatOff";
+  message.destinationName = "hvac/heatSet";
   client.send(message);
 }
 
@@ -177,17 +159,11 @@ temp[message.destinationName] = message.payloadString;
     case 'temp/rh':
       $('#rh').html(message.payloadString);
       break;
-    case 'hvac/coolOn':
-      $('#coolOn').html(message.payloadString);
+    case 'hvac/coolSet':
+      $('#coolSet').html(message.payloadString);
       break;
-    case 'hvac/coolOff':
-      $('#coolOff').html(message.payloadString);
-      break;
-    case 'hvac/heatOn':
-      $('#heatOn').html(message.payloadString);
-      break;
-    case 'hvac/heatOff':
-      $('#heatOff').html(message.payloadString);
+    case 'hvac/heatSet':
+      $('#heatSet').html(message.payloadString);
       break;
     case 'temp/289c653f03000027':
       $('#out').html(message.payloadString);
@@ -196,73 +172,39 @@ temp[message.destinationName] = message.payloadString;
 
 }
 
-    $('#coolOnDown').click(function(){
-        message = new Paho.MQTT.Message((temp['hvac/coolOn'] - 1).toString());
-        message.destinationName = "hvac/coolOn";
+    $('#coolSetDown').click(function(){
+        message = new Paho.MQTT.Message((temp['hvac/coolSet'] - 1).toString());
+        message.destinationName = "hvac/coolSet";
         client.send(message);
         message = new Paho.MQTT.Message('?');
-        message.destinationName = "hvac/coolOn";
+        message.destinationName = "hvac/coolSet";
         client.send(message);
     });
 
-    $('#coolOnUp').click(function(){
-        message = new Paho.MQTT.Message((Number(temp['hvac/coolOn']) + 1).toString());
-        message.destinationName = "hvac/coolOn";
+    $('#coolSetUp').click(function(){
+        message = new Paho.MQTT.Message((Number(temp['hvac/coolSet']) + 1).toString());
+        message.destinationName = "hvac/coolSet";
         client.send(message);
         message = new Paho.MQTT.Message('?');
-        message.destinationName = "hvac/coolOn";
-        client.send(message);
-    });
-    $('#coolOffDown').click(function(){
-        message = new Paho.MQTT.Message((temp['hvac/coolOff'] - 1).toString());
-        message.destinationName = "hvac/coolOff";
-        client.send(message);
-        message = new Paho.MQTT.Message('?');
-        message.destinationName = "hvac/coolOff";
+        message.destinationName = "hvac/coolSet";
         client.send(message);
     });
 
-    $('#coolOffUp').click(function(){
-        message = new Paho.MQTT.Message((Number(temp['hvac/coolOff']) + 1).toString());
-        message.destinationName = "hvac/coolOff";
+    $('#heatSetDown').click(function(){
+        message = new Paho.MQTT.Message((temp['hvac/heatSet'] - 1).toString());
+        message.destinationName = "hvac/heatSet";
         client.send(message);
         message = new Paho.MQTT.Message('?');
-        message.destinationName = "hvac/coolOff";
+        message.destinationName = "hvac/heatSet";
         client.send(message);
     });
 
-    $('#heatOffDown').click(function(){
-        message = new Paho.MQTT.Message((temp['hvac/heatOff'] - 1).toString());
-        message.destinationName = "hvac/heatOff";
+    $('#heatSetUp').click(function(){
+        message = new Paho.MQTT.Message((Number(temp['hvac/heatSet']) + 1).toString());
+        message.destinationName = "hvac/heatSet";
         client.send(message);
         message = new Paho.MQTT.Message('?');
-        message.destinationName = "hvac/heatOff";
-        client.send(message);
-    });
-
-    $('#heatOffUp').click(function(){
-        message = new Paho.MQTT.Message((Number(temp['hvac/heatOff']) + 1).toString());
-        message.destinationName = "hvac/heatOff";
-        client.send(message);
-        message = new Paho.MQTT.Message('?');
-        message.destinationName = "hvac/heatOff";
-        client.send(message);
-    });
-    $('#heatOnDown').click(function(){
-        message = new Paho.MQTT.Message((temp['hvac/heatOn'] - 1).toString());
-        message.destinationName = "hvac/heatOn";
-        client.send(message);
-        message = new Paho.MQTT.Message('?');
-        message.destinationName = "hvac/heatOn";
-        client.send(message);
-    });
-
-    $('#heatOnUp').click(function(){
-         message = new Paho.MQTT.Message((Number(temp['hvac/heatOn']) + 1).toString());
-        message.destinationName = "hvac/heatOn";
-        client.send(message);
-        message = new Paho.MQTT.Message('?');
-        message.destinationName = "hvac/heatOn";
+        message.destinationName = "hvac/heatSet";
         client.send(message);
     });
 });
