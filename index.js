@@ -145,48 +145,98 @@ function graph(req, res) {
 }
 app.get('/graph/:id', graph);
 
-var grpmap = [];
-grpmap.kWh = 'kWh';
-grpmap.W = 'W';
-grpmap.Gal = 'Gal';
-grpmap.GPM = 'GPM';
-grpmap.In = 'In';
-grpmap.Out = 'Out';
-grpmap.Upper = 'Upper';
-grpmap.Lower = 'Lower';
-grpmap.DEW = 'DEW';
-grpmap.T = 'T';
-grpmap.heat = 'heat';
-grpmap.cool = 'cool';
 
-var timemap = [];
-timemap['15m'] = '15m';
-timemap['60m'] = '60m';
-timemap['24h'] = '24h';
-timemap['28d'] = '28d';
 
-app.get('/chart/:grp/:time', function(req, res) {
-    var out = [];
-    var grp = grpmap[req.params.grp];
-    var time = timemap[req.params.time];
-    leveldb.createReadStream({
-            start: 'HEM!' + grp + '!' + time + '!',
-            end: 'HEM!' + grp + '!' + time + '!\xff',
-            keys: false
-        })
-        .on('data', function(data) {
-            out.push(JSON.parse(data));
-        })
-        .on('close', function() {
-            res.jsonp(out);
+
+
+var mongodb = require('mongodb');
+var MongoClient = mongodb.MongoClient;
+var url = 'mongodb://localhost:27017/hem';
+
+MongoClient.connect(url, function(err, db) {
+    if (err) {
+        console.log('Unable to connect to the mongoDB server. Error:', err);
+    }
+
+    app.get('/data/:collection', function(req, res) {
+        var collectionName;
+        if ('collection' in req.params) {
+            collectionName = req.params.collection;
+        }
+        var out = [];
+        db.collection(collectionName).find({
+            t: {
+                $gt: Date.now() - 6 * 60 * 60 * 1000
+            }
+        }).toArray(function(err, docs) {
+            docs.forEach(function(element, index, array) {
+                out.push([element.t, element.d]);
+            });
+            res.json([{
+                data: out
+            }]);
         });
+    });
+
+    app.get('/data/:collection/:time', function(req, res) {
+        var collectionName;
+        if ('collection' in req.params && 'time' in req.params) {
+            collectionName = req.params.collection + '-' + req.params.time;
+        }
+
+        if (req.params.collection === 'power-kWh' || req.params.collection === 'water-Gal') {
+            var out = [];
+            db.collection(collectionName).find({
+                // t: {
+                //     $gt: Date.now() - 3 * 24 * 60 * 60 * 1000
+                // }
+            }).toArray(function(err, docs) {
+                docs.sort(function(a, b) {
+                    return a.t - b.t;
+                });
+                docs.forEach(function(element, index, array) {
+                    out.push([element.t, element.d]);
+                });
+                res.json([{
+                    data: out
+                }]);
+            });
+
+        } else {
+
+            var range = [],
+                avg = [];
+            db.collection(collectionName).find({
+                //  t: {
+                //      $gt: Date.now() - 2* 28 * 24  * 60 * 60 * 1000
+                //  }
+            }).toArray(function(err, docs) {
+                docs.sort(function(a, b) {
+                    return a.t - b.t;
+                });
+                docs.forEach(function(element, index, array) {
+                    var average = Number((element.acc / element.cnt).toFixed(2));
+                    range.push([element.t, element.min, element.max]);
+                    avg.push([element.t, average]);
+                });
+                res.json([{
+                    name: 'Min-Max',
+                    data: range,
+                    type: 'arearange'
+                }, {
+                    name: 'Avg',
+                    data: avg
+                }]);
+            });
+        }
+    });
 });
 
 app.use(express.static(__dirname + '/public'));
 
 var mqtt = require('mqtt');
 var client = mqtt.connect('mqtt://localhost', {
-    clientId: 'raspberrypi'
+    clientId: 'raspberrypi' + Math.random().toString(16).substr(2, 8)
 });
 
 client.on('connect', function() {
