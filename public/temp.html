@@ -50,7 +50,7 @@
             <h1 class="cover-heading"><span id="temp"></span> F</h1>
             <div class="lead">
               <p>Humidity:  <span id="rh"></span> %</p>
-              <p>Dew Point:  <span id="dew"></span> F</p>
+              <p>Discomfort:  <span id="di"></span> F</p>
               <p>Outdoor Temp: <span id="out"></span> F </p>
               <p><span id="state"></span></p>
             </div>
@@ -116,7 +116,7 @@ function onConnect() {
   console.log("onConnect");
   client.subscribe("hvac/+");
   client.subscribe("temp/tempF");
-  client.subscribe("temp/dewF");
+  client.subscribe("temp/di");
   client.subscribe("temp/rh");
   client.subscribe("temp/289c653f03000027");
 
@@ -153,16 +153,36 @@ temp[message.destinationName] = message.payloadString;
     case 'temp/tempF':
       $('#temp').html(message.payloadString);
       break;
-    case 'temp/dewF':
-      $('#dew').html(message.payloadString);
+    case 'temp/di':
+      $('#di').html(message.payloadString);
       break;
     case 'temp/rh':
       $('#rh').html(message.payloadString);
       break;
-    case 'hvac/coolSet':
+      case 'hvac/coolSet':
+      if (Number(message.payloadString) < 60) {
+        messageFix = new Paho.MQTT.Message(Number(60).toString());
+        messageFix.destinationName = "hvac/coolSet";
+        client.send(messageFix);
+      }
+      if (Number(message.payloadString) > 85) {
+        messageFix = new Paho.MQTT.Message(Number(85).toString());
+        messageFix.destinationName = "hvac/coolSet";
+        client.send(messageFix);
+      }
       $('#coolSet').html(message.payloadString);
       break;
     case 'hvac/heatSet':
+      if (Number(message.payloadString) < 60) {
+        messageFix = new Paho.MQTT.Message(Number(60).toString());
+        messageFix.destinationName = "hvac/heatSet";
+        client.send(messageFix);
+      }
+      if (Number(message.payloadString) > 85) {
+        messageFix = new Paho.MQTT.Message(Number(85).toString());
+        messageFix.destinationName = "hvac/heatSet";
+        client.send(messageFix);
+      }
       $('#heatSet').html(message.payloadString);
       break;
     case 'temp/289c653f03000027':

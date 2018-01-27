@@ -145,155 +145,165 @@ function graph(req, res) {
 }
 app.get('/graph/:id', graph);
 
+var grpmap = [];
+grpmap.kWh = 'kWh';
+grpmap.W = 'W';
+grpmap.Gal = 'Gal';
+grpmap.GPM = 'GPM';
+grpmap.In = 'In';
+grpmap.Out = 'Out';
+grpmap.Upper = 'Upper';
+grpmap.Lower = 'Lower';
+grpmap.DEW = 'DEW';
+grpmap.T = 'T';
+grpmap.heat = 'heat';
+grpmap.cool = 'cool';
 
-var mongodb = require('mongodb');
-var MongoClient = mongodb.MongoClient;
-var url = 'mongodb://localhost:27017/hem';
+var timemap = [];
+timemap['15m'] = '15m';
+timemap['60m'] = '60m';
+timemap['24h'] = '24h';
+timemap['28d'] = '28d';
 
-MongoClient.connect(url, function(err, db) {
-    if (err) {
-        console.log('Unable to connect to the mongoDB server. Error:', err);
-    }
-
-    app.get('/data/:collection', function(req, res) {
-        var collectionName;
-        if ('collection' in req.params) {
-            collectionName = req.params.collection;
-        }
-        var out = [];
-        db.collection(collectionName).find({
-            t: {
-                $gt: Date.now() - 6 * 60 * 60 * 1000
-            }
-        }).toArray(function(err, docs) {
-            docs.forEach(function(element, index, array) {
-                out.push([element.t, element.d]);
-            });
-            res.json([{
-                data: out
-            }]);
+app.get('/chart/:grp/:time', function(req, res) {
+    var out = [];
+    var grp = grpmap[req.params.grp];
+    var time = timemap[req.params.time];
+    leveldb.createReadStream({
+            start: 'HEM!' + grp + '!' + time + '!',
+            end: 'HEM!' + grp + '!' + time + '!\xff',
+            keys: false
+        })
+        .on('data', function(data) {
+            out.push(JSON.parse(data));
+        })
+        .on('close', function() {
+            res.jsonp(out);
         });
-    });
-
-    app.get('/data/:collection/:time', function(req, res) {
-        var collectionName;
-        if ('collection' in req.params && 'time' in req.params) {
-            collectionName = req.params.collection + '-' + req.params.time;
-        }
-
-        if (req.params.collection === 'power-kWh' || req.params.collection === 'water-Gal') {
-            var out = [];
-            db.collection(collectionName).find({
-                // t: {
-                //     $gt: Date.now() - 3 * 24 * 60 * 60 * 1000
-                // }
-            }).toArray(function(err, docs) {
-                docs.sort(function(a, b) {
-                    return a.t - b.t;
-                });
-                docs.forEach(function(element, index, array) {
-                    out.push([element.t, element.d]);
-                });
-                res.json([{
-                    data: out
-                }]);
-            });
-
-        } else {
-
-            var range = [],
-                avg = [];
-            db.collection(collectionName).find({
-                //  t: {
-                //      $gt: Date.now() - 2* 28 * 24  * 60 * 60 * 1000
-                //  }
-            }).toArray(function(err, docs) {
-                docs.sort(function(a, b) {
-                    return a.t - b.t;
-                });
-                docs.forEach(function(element, index, array) {
-                    var average = Number((element.acc / element.cnt).toFixed(2));
-                    range.push([element.t, element.min, element.max]);
-                    avg.push([element.t, average]);
-                });
-                res.json([{
-                    name: 'Min-Max',
-                    data: range,
-                    type: 'arearange'
-                }, {
-                    name: 'Avg',
-                    data: avg
-                }]);
-            });
-        }
-    });
 });
 
 app.use(express.static(__dirname + '/public'));
 
 var mqtt = require('mqtt');
 var client = mqtt.connect('mqtt://localhost', {
-    clientId: 'raspberrypi' + Math.random().toString(16).substr(2, 8)
+    clientId: 'raspberrypi'
 });
 
 client.on('connect', function() {
     client.subscribe('#');
 });
 
+var tempFAvg,dewFAvg,rhAvg,outAvg,upperAvg,lowerAvg,achighAvg,aclowAvg;
+
 client.on('message', function(topic, message) {
     switch (topic) {
         case 'power/W':
-            var dataW = Number(message.toString());
-            child.stdin.write('update ' + __dirname + '/hem-w.rrd N:' + dataW + '\n');
+            var data = Number(message.toString());
+            child.stdin.write('update ' + __dirname + '/hem-w.rrd N:' + data + '\n');
             break;
         case 'water/GPM':
-            var dataGPM = Number(message.toString());
+            var data = Number(message.toString());
             child.stdin.write('update ' + __dirname + '/hem-gpm.rrd N:' +
-                dataGPM + '\n');
+                data + '\n');
             break;
         case 'temp/tempF':
-            var dataF = Number(message.toString());
+            var data = Number(message.toString());
+
+            if (isNaN(tempFAvg)) {
+                tempFAvg = data;
+            }
+            tempFAvg = 0.9 * tempFAvg + 0.1 * data;
+            data = tempFAvg;
             child.stdin.write('update ' + __dirname + '/hem-in.rrd N:' +
-                dataF + '\n');
+                data + '\n');
             break;
         case 'temp/dewF':
-            var dataDew = Number(message.toString());
+            var data = Number(message.toString());
+
+            if (isNaN(dewFAvg)) {
+                dewFAvg = data;
+            }
+            dewFAvg = 0.9 * dewFAvg + 0.1 * data;
+            data = dewFAvg;
+
             child.stdin.write('update ' + __dirname + '/hem-dew.rrd N:' +
-                dataDew + '\n');
+                data + '\n');
             break;
         case 'temp/rh':
-            var dataRH = Number(message.toString());
+            var data = Number(message.toString());
+
+            if (isNaN(rhAvg)) {
+                rhAvg = data;
+            }
+            rhAvg = 0.9 * rhAvg + 0.1 * data;
+            data = rhAvg;
+
             child.stdin.write('update ' + __dirname + '/hem-rh.rrd N:' +
-                dataRH + '\n');
+                data + '\n');
             break;
         case 'temp/289c653f03000027':
-            var dataOut = Number(message.toString());
+            var data = Number(message.toString());
+
+            if (isNaN(outAvg)) {
+                outAvg = data;
+            }
+            outAvg = 0.9 * outAvg + 0.1 * data;
+            data = outAvg;
+
             child.stdin.write('update ' + __dirname + '/hem-out.rrd N:' +
-                dataOut + '\n');
+                data + '\n');
             break;
 
         case 'temp/2809853f030000a7':
-            var dataUpper = Number(message.toString());
+            var data = Number(message.toString());
+
+            if (isNaN(upperAvg)) {
+                upperAvg = data;
+            }
+            upperAvg = 0.9 * upperAvg + 0.1 * data;
+            data = upperAvg;
+
             child.stdin.write('update ' + __dirname + '/hem-upper.rrd N:' +
-                dataUpper + '\n');
+                data + '\n');
             break;
 
         case 'temp/2813513f03000072':
-            var dataLower = Number(message.toString());
+            var data = Number(message.toString());
+
+            if (isNaN(lowerAvg)) {
+                lowerAvg = data;
+            }
+            lowerAvg = 0.9 * lowerAvg + 0.1 * data;
+            data = lowerAvg;
+
             child.stdin.write('update ' + __dirname + '/hem-lower.rrd N:' +
-                dataLower + '\n');
+                data + '\n');
             break;
 
         case 'temp/2823583f0300006c':
-            var dataACHigh = Number(message.toString());
+            var data = Number(message.toString());
+
+            if (isNaN(achighAvg)) {
+                achighAvg = data;
+            }
+            achighAvg = 0.9 * achighAvg + 0.1 * data;
+            data = achighAvg;
+
             child.stdin.write('update ' + __dirname + '/hem-achigh.rrd N:' +
-                dataACHigh + '\n');
+                data + '\n');
             break;
 
         case 'temp/28ae3a3f0300005e':
-            var dataACLow = Number(message.toString());
+            var data = Number(message.toString());
+
+            if (isNaN(aclowAvg)) {
+                aclowAvg = data;
+            }
+            aclowAvg = 0.9 * aclowAvg + 0.1 * data;
+            data = aclowAvg;
+
             child.stdin.write('update ' + __dirname + '/hem-aclow.rrd N:' +
-                dataACLow + '\n');
+                data + '\n');
             break;
 
         case 'hvac/state':
@@ -310,4 +320,3 @@ client.on('message', function(topic, message) {
             break;
     }
 });
-
