@@ -170,6 +170,8 @@ temp[message.destinationName] = message.payloadString;
         messageFix.destinationName = "hvac/coolSet";
         client.send(messageFix);
       }
+      $('#coolSetDown').show();
+      $('#coolSetUp').show();
       $('#coolSet').html(message.payloadString);
       break;
     case 'hvac/heatSet':
@@ -183,16 +185,18 @@ temp[message.destinationName] = message.payloadString;
         messageFix.destinationName = "hvac/heatSet";
         client.send(messageFix);
       }
+      $('#heatSetDown').show();
+      $('#heatSetUp').show();
       $('#heatSet').html(message.payloadString);
       break;
     case 'temp/289c653f03000027':
       $('#out').html(message.payloadString);
       break;
   }
-
 }
 
     $('#coolSetDown').click(function(){
+        $('#coolSetDown').hide();
         message = new Paho.MQTT.Message((temp['hvac/coolSet'] - 1).toString());
         message.destinationName = "hvac/coolSet";
         client.send(message);
@@ -202,6 +206,7 @@ temp[message.destinationName] = message.payloadString;
     });
 
     $('#coolSetUp').click(function(){
+        $('#coolSetUp').hide();
         message = new Paho.MQTT.Message((Number(temp['hvac/coolSet']) + 1).toString());
         message.destinationName = "hvac/coolSet";
         client.send(message);
@@ -211,6 +216,7 @@ temp[message.destinationName] = message.payloadString;
     });
 
     $('#heatSetDown').click(function(){
+        $('#heatSetDown').hide();
         message = new Paho.MQTT.Message((temp['hvac/heatSet'] - 1).toString());
         message.destinationName = "hvac/heatSet";
         client.send(message);
@@ -220,6 +226,7 @@ temp[message.destinationName] = message.payloadString;
     });
 
     $('#heatSetUp').click(function(){
+        $('#heatSetUp').hide();
         message = new Paho.MQTT.Message((Number(temp['hvac/heatSet']) + 1).toString());
         message.destinationName = "hvac/heatSet";
         client.send(message);
