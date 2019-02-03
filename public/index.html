@@ -61,16 +61,16 @@
             }
 
             function loadImg(temp) {
-                $('#watt2').attr("src", "/graph/watt?" + temp + '&start=4h');
-                $('#temp2').attr("src", "/graph/temp?" + temp + '&start=4h');
-                $('#ac2').attr("src", "/graph/ac?" + temp + '&start=4h');
-                $('#wh2').attr("src", "/graph/wh?" + temp + '&start=4h');
-                $('#gpm2').attr("src", "/graph/gpm?" + temp + '&start=4h');
-                $('#watt24').attr("src", "/graph/watt?" + temp + '&start=24h');
-                $('#temp24').attr("src", "/graph/temp?" + temp + '&start=24h');
-                $('#ac24').attr("src", "/graph/ac?" + temp + '&start=24h');
-                $('#wh24').attr("src", "/graph/wh?" + temp + '&start=24h');
-                $('#gpm24').attr("src", "/graph/gpm?" + temp + '&start=24h');
+                $('#watt2').attr("src", "/graph/watt?" + temp + '&start=24h');
+                $('#temp2').attr("src", "/graph/temp?" + temp + '&start=24h');
+                $('#ac2').attr("src", "/graph/ac?" + temp + '&start=24h');
+                $('#wh2').attr("src", "/graph/wh?" + temp + '&start=24h');
+                $('#gpm2').attr("src", "/graph/gpm?" + temp + '&start=24h');
+                $('#watt24').attr("src", "/graph/watt?" + temp + '&start=48h');
+                $('#temp24').attr("src", "/graph/temp?" + temp + '&start=48h');
+                $('#ac24').attr("src", "/graph/ac?" + temp + '&start=48h');
+                $('#wh24').attr("src", "/graph/wh?" + temp + '&start=48h');
+                $('#gpm24').attr("src", "/graph/gpm?" + temp + '&start=48h');
             }
 
             loadImg(time());

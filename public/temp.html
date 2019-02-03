@@ -92,7 +92,7 @@
     <!-- Placed at the end of the document so the pages load faster -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
     <script src="js/bootstrap.min.js"></script>
-    <script src="js/mqttws31.js"></script>
+    <script src="js/paho-mqtt.js"></script>
 
 <script>
 $(function(){
@@ -108,7 +108,7 @@ client.onMessageArrived = onMessageArrived;
 
 // connect the client
 client.connect({onSuccess:onConnect});
-
+//client.connect();
 
 // called when the client connects
 function onConnect() {
