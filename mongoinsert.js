@@ -21,11 +21,18 @@ MongoClient.connect(url, function(err, db) {
       topic = topic.split('/').join('-');
 
       if (topic.indexOf('hvac-state') > -1) {
-//        if (message.indexOf('CoolOn') > -1 || message.indexOf('Cooling') > -1) {
-//          updateCnt(db, 'hvac-cool', 0.25);
-//        } else if (message.indexOf('HeatOn') > -1 || message.indexOf('Heating') > -1) {
-//          updateCnt(db, 'hvac-heat', 0.25);
-//        }
+        if (message.indexOf('CoolOn') > -1 || message.indexOf('Cooling') > -1) {
+          updateCnt(db, 'hvac-cool', 0.25);
+        } else if (message.indexOf('HeatOn') > -1 || message.indexOf('Heating') > -1) {
+          updateCnt(db, 'hvac-heat', 0.25);
+        db.collection('hvac-heat-28')
+          .find({t : getMonthBucket()})
+          .toArray(function(err, result){
+            if(result.length === 1){
+              client.publish('hvac/heatTime', result[0].d.toFixed(3));
+            }
+          });
+        }
       } else if (topic.indexOf('power-W') > -1) {
 //        insertNow(db, topic, message);
 //        insertAvg(db, topic, message);
