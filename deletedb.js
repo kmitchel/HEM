@@ -13,15 +13,24 @@ MongoClient.connect(url, function(err, db) {
             if (element.name != "system.indexes") {
                 var splitted = element.name.split("-");
                 if (splitted.length == 2) {
+                    console.log(element);
                     db.collection(element.name)
-                        .deleteMany({t: {
-                            $lt: Date.now() - 2 * 24 * 60 * 60 * 1000
-                        }}, function(err, obj) {
-                            if (err) throw err;
-                            if (obj.result.n != 0) {
-                                console.log(obj.result.n + " document(s) deleted from " + element.name);
-                            }
-                        });
+                    .find({}).toArray(function(err, result) {
+                        if (err) throw err;
+                        console.log(result.length);
+                      });
+
+
+
+
+                        // .deleteMany({t: {
+                        //     $lt: Date.now() - 60 * 60 * 1000
+                        // }}, function(err, obj) {
+                        //     if (err) throw err;
+                        //     //if (obj.result.n != 0) {
+                        //         console.log(obj.result.n + " document(s) deleted from " + element.name);
+                        //     //}
+                        //});
                 } else if (splitted.length == 3) {
                     switch (splitted[2]) {
                         case '5':

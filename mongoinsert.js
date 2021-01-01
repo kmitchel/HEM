@@ -21,15 +21,15 @@ MongoClient.connect(url, function(err, db) {
       topic = topic.split('/').join('-');
 
       if (topic.indexOf('hvac-state') > -1) {
-        if (message.indexOf('CoolOn') > -1 || message.indexOf('Cooling') > -1) {
-          updateCnt(db, 'hvac-cool', 0.25);
-        } else if (message.indexOf('HeatOn') > -1 || message.indexOf('Heating') > -1) {
-          updateCnt(db, 'hvac-heat', 0.25);
-        }
+//        if (message.indexOf('CoolOn') > -1 || message.indexOf('Cooling') > -1) {
+//          updateCnt(db, 'hvac-cool', 0.25);
+//        } else if (message.indexOf('HeatOn') > -1 || message.indexOf('Heating') > -1) {
+//          updateCnt(db, 'hvac-heat', 0.25);
+//        }
       } else if (topic.indexOf('power-W') > -1) {
-        insertNow(db, topic, message);
-        insertAvg(db, topic, message);
-        updateCnt(db, 'power-kWh', 0.002);
+//        insertNow(db, topic, message);
+//        insertAvg(db, topic, message);
+        updateCnt(db, 'power-kWh', 0.001);
         db.collection('power-kWh-28')
           .find({t : getMonthBucket()})
           .toArray(function(err, result){
@@ -38,8 +38,8 @@ MongoClient.connect(url, function(err, db) {
             }
           });
       } else if (topic.indexOf('water-GPM') > -1) {
-        insertNow(db, topic, message);
-        insertAvg(db, topic, message);
+//        insertNow(db, topic, message);
+//        insertAvg(db, topic, message);
         updateCnt(db, 'water-Gal', 0.25);
         db.collection('water-Gal-28')
           .find({t : getMonthBucket()})
@@ -49,8 +49,8 @@ MongoClient.connect(url, function(err, db) {
             }
           });
       } else if (topic.indexOf('temp-') > -1) {
-        insertNow(db, topic, message);
-        insertAvg(db, topic, message);
+//        insertNow(db, topic, message);
+//        insertAvg(db, topic, message);
       }
     });
 });
@@ -107,10 +107,10 @@ function insertAvg(db, topic, message) {
 
 function updateCnt(db, topic, message) {
   var buckets = [
-    [5, Math.floor(Date.now() / (5 * 60 * 1000)) * 5 * 60 * 1000],
-    [15, Math.floor(Date.now() / (15 * 60 * 1000)) * 15 * 60 * 1000],
-    [60, Math.floor(Date.now() / (60 * 60 * 1000)) * 60 * 60 * 1000],
-    [24, new Date().setHours(0, 0, 0, 0)],
+//    [5, Math.floor(Date.now() / (5 * 60 * 1000)) * 5 * 60 * 1000],
+//    [15, Math.floor(Date.now() / (15 * 60 * 1000)) * 15 * 60 * 1000],
+//    [60, Math.floor(Date.now() / (60 * 60 * 1000)) * 60 * 60 * 1000],
+//    [24, new Date().setHours(0, 0, 0, 0)],
     [28, getMonthBucket()]
   ];
 
