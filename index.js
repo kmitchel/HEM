@@ -1,4 +1,3 @@
-
 //Spawn rrdtool child process. Update RRD files.
 var spawn = require('child_process').spawn;
 var child = spawn('rrdtool', ['-']);
@@ -267,7 +266,7 @@ client.on('message', function(topic, message) {
             child.stdin.write('update ' + __dirname + '/hem-rh.rrd N:' +
                 dataRH + '\n');
             break;
-        case 'temp/289c653f03000027':
+        case 'temp/280049724c2001be':
             var dataOut = Number(message.toString());
             child.stdin.write('update ' + __dirname + '/hem-out.rrd N:' +
                 dataOut + '\n');
