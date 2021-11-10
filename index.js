@@ -284,13 +284,13 @@ client.on('message', function(topic, message) {
                 dataLower + '\n');
             break;
 
-        case 'temp/2823583f0300006c':
+        case 'temp/289fa756b5013c68':
             var dataACHigh = Number(message.toString());
             child.stdin.write('update ' + __dirname + '/hem-achigh.rrd N:' +
                 dataACHigh + '\n');
             break;
 
-        case 'temp/28ae3a3f0300005e':
+        case 'temp/2874913c46200105':
             var dataACLow = Number(message.toString());
             child.stdin.write('update ' + __dirname + '/hem-aclow.rrd N:' +
                 dataACLow + '\n');

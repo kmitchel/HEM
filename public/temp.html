@@ -74,6 +74,12 @@
             </div>
             <p class="lead" id="status"></p>
           </div>
+<div>
+<span class="hide" id="heat" style="background-color:red">Heat Mode</span>
+<span class="hide" id="cool" style="background-color:blue">Cool Mode</span>
+<span class="hide" id="off" style="background-color:grey">Off Mode</span>
+</div>
+
 
           <div class="mastfoot">
             <div class="inner">
@@ -149,6 +155,22 @@ temp[message.destinationName] = message.payloadString;
   switch(message.destinationName){
     case 'hvac/state':
       $('#state').html(message.payloadString);
+	if(message.payloadString.includes("Heat")) {
+		$('#cool').removeClass('hide');
+                $('#heat').addClass('hide');
+		$('#off').removeClass('hide');
+	}
+        if(message.payloadString.includes("Cool")) {
+                $('#heat').removeClass('hide');
+                $('#cool').addClass('hide');
+		$('#off').removeClass('hide');
+        }
+	if(message.payloadString.includes("Off")) {
+		$('#heat').removeClass('hide');
+		$('#cool').removeClass('hide');
+		$('#off').addClass('hide');
+	}
+
       break;
     case 'temp/tempF':
       $('#temp').html(message.payloadString);
@@ -234,6 +256,28 @@ temp[message.destinationName] = message.payloadString;
         message.destinationName = "hvac/heatSet";
         client.send(message);
     });
+
+    $('#heat').click(function(){
+        message = new Paho.MQTT.Message("heat");
+        message.destinationName = "hvac/mode";
+        client.send(message);
+        $('#heat').addClass('hide');
+    });
+
+    $('#cool').click(function(){
+        message = new Paho.MQTT.Message("cool");
+        message.destinationName = "hvac/mode";
+        client.send(message);
+	$('#cool').addClass('hide');
+    });
+
+    $('#off').click(function(){
+        message = new Paho.MQTT.Message("off");
+        message.destinationName = "hvac/mode";
+        client.send(message);
+        $('#off').addClass('hide');
+    });
+
 });
 </script>
 
