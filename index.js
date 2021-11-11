@@ -16,7 +16,7 @@ child.stderr.on('data', function(data) {
 var express = require('express');
 var app = express();
 var server = require('http').Server(app);
-server.listen(80);
+server.listen(8080);
 
 var spawn = require('child_process').spawn;
 var SunCalc = require('suncalc');
