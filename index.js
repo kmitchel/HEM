@@ -161,17 +161,20 @@ MongoClient.connect(url, function(err, db) {
             collectionName = req.params.collection
         }
         var out = []
-        db.collection(collectionName).find({
-            t: {
-                $gt: Date.now() - 6 * 60 * 60 * 1000
+
+        leveldb.get(collectionName, function (error, data){
+            if(!error || data != null){
+                data.forEach(function(item){
+                    out.push([item.t, item.d])
+                })
+                res.json([{
+                    data:out
+                }])
+            } else {
+                res.json([{
+                    data:out
+                }])
             }
-        }).toArray(function(err, docs) {
-            docs.forEach(function(element, index, array) {
-                out.push([element.t, element.d])
-            })
-            res.json([{
-                data: out
-            }])
         })
     })
 
