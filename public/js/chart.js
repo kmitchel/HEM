@@ -11,7 +11,7 @@ $(function() {
             type: 'line'
         },
         title: {
-            text: 'Test'
+            text: 'Loading...'
         },
         legend: {
             enabled: false

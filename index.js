@@ -145,80 +145,62 @@ function graph(req, res) {
 }
 app.get("/graph/:id", graph)
 
+app.get("/data/:collection", function(req, res) {
+    var collectionName
+    if ("collection" in req.params) {
+        collectionName = req.params.collection
+    }
+    var out = []
 
-var mongodb = require("mongodb")
-var MongoClient = mongodb.MongoClient
-var url = "mongodb://localhost:27017/hem"
+    leveldb.get(collectionName, function(error, data) {
+        if (!error || data != null) {
+            data.forEach(function(item) {
+                out.push([item.t, item.d])
+            })
+            res.json([{
+                data: out
+            }])
+        } else {
+            res.json([{
+                data: out
+            }])
+        }
+    })
+})
 
-MongoClient.connect(url, function(err, db) {
-    if (err) {
-        console.log("Unable to connect to the mongoDB server. Error:", err)
+app.get("/data/:collection/:time", function(req, res) {
+    var collectionName
+    if ("collection" in req.params && "time" in req.params) {
+        collectionName = req.params.collection + "-" + req.params.time
     }
 
-    app.get("/data/:collection", function(req, res) {
-        var collectionName
-        if ("collection" in req.params) {
-            collectionName = req.params.collection
-        }
-        var out = []
+    if (req.params.collection === "power-kWh" || req.params.collection === "water-Gal") {
 
-        leveldb.get(collectionName, function (error, data){
-            if(!error || data != null){
-                data.forEach(function(item){
-                    out.push([item.t, item.d])
-                })
-                res.json([{
-                    data:out
-                }])
-            } else {
-                res.json([{
-                    data:out
-                }])
-            }
-        })
-    })
-
-    app.get("/data/:collection/:time", function(req, res) {
-        var collectionName
-        if ("collection" in req.params && "time" in req.params) {
-            collectionName = req.params.collection + "-" + req.params.time
-        }
-
-        if (req.params.collection === "power-kWh" || req.params.collection === "water-Gal") {
-            var out = []
-            db.collection(collectionName).find({
-                // t: {
-                //     $gt: Date.now() - 3 * 24 * 60 * 60 * 1000
-                // }
-            }).toArray(function(err, docs) {
-                docs.sort(function(a, b) {
-                    return a.t - b.t
-                })
-                docs.forEach(function(element, index, array) {
-                    out.push([element.t, element.d])
-                })
+        let out = []
+        leveldb.createReadStream({gt: collectionName})
+            .on('data', function(data) {
+                if (data.key.includes(collectionName)) {
+                    out.push([Number(data.key.replace(collectionName + "-", "")), data.value.d])
+                }
+            })
+            .on('end', function() {
                 res.json([{
                     data: out
                 }])
             })
-
-        } else {
-
-            var range = [],
-                avg = []
-            db.collection(collectionName).find({
-                //  t: {
-                //      $gt: Date.now() - 2* 28 * 24  * 60 * 60 * 1000
-                //  }
-            }).toArray(function(err, docs) {
-                docs.sort(function(a, b) {
-                    return a.t - b.t
-                })
-                docs.forEach(function(element, index, array) {
-                    var average = Number((element.acc / element.cnt).toFixed(2))
-                    range.push([element.t, element.min, element.max])
-                    avg.push([element.t, average])
-                })
+    } else {
+        let range = []
+        let avg = []
+        leveldb.createReadStream({gt: collectionName})
+            .on('data', function(data) {
+                if (data.key.includes(collectionName)) {
+                    let key = Number(data.key.replace(collectionName + "-", ""))
+                    range.push([key, data.value.min, data.value.max])
+                    let average = Number((data.value.acc / data.value.cnt).toFixed(2))
+                    avg.push([key, average])
+                }
+            })
+            .on('end', function() {
                 res.json([{
                     name: "Min-Max",
                     data: range,
@@ -228,8 +210,7 @@ MongoClient.connect(url, function(err, db) {
                     data: avg
                 }])
             })
-        }
-    })
+    }
 })
 
 app.use(express.static(__dirname + "/public"))
@@ -312,7 +293,6 @@ client.on("message", function(topic, message) {
             break
     }
 
-
     topic = topic.split("/").join("-");
 
     if (topic.indexOf("hvac-state") > -1) {
@@ -357,10 +337,7 @@ client.on("message", function(topic, message) {
         insertNow(leveldb, topic, message)
         insertAvg(leveldb, topic, message)
     }
-
-
 })
-
 
 function getMonthBucket() {
     let month;
