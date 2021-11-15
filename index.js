@@ -145,6 +145,10 @@ function graph(req, res) {
 }
 app.get("/graph/:id", graph)
 
+let leveldb = require("level")("./hemdb", {
+    valueEncoding: "json"
+})
+
 app.get("/data/:collection", function(req, res) {
     var collectionName
     if ("collection" in req.params) {
@@ -152,19 +156,15 @@ app.get("/data/:collection", function(req, res) {
     }
     var out = []
 
-    leveldb.get(collectionName, function(error, data) {
-        if (!error || data != null) {
-            data.forEach(function(item) {
-                out.push([item.t, item.d])
-            })
-            res.json([{
-                data: out
-            }])
-        } else {
-            res.json([{
-                data: out
-            }])
-        }
+    leveldb.createReadStream({gt: collectionName + "-00-", lt: collectionName + "-00."})
+    .on('data', function(data) {
+        let t = data.key.split("-")[3]
+        out.push([Number(t), data.value])
+    })
+    .on('end', function() {
+        res.json([{
+            data: out
+        }])
     })
 })
 
@@ -177,11 +177,10 @@ app.get("/data/:collection/:time", function(req, res) {
     if (req.params.collection === "power-kWh" || req.params.collection === "water-Gal") {
 
         let out = []
-        leveldb.createReadStream({gt: collectionName})
+        leveldb.createReadStream({gt: collectionName + "-", lt: collectionName + "."})
             .on('data', function(data) {
-                if (data.key.includes(collectionName)) {
-                    out.push([Number(data.key.replace(collectionName + "-", "")), data.value.d])
-                }
+                let t = data.key.split("-")[3]
+                out.push([Number(t), data.value])
             })
             .on('end', function() {
                 res.json([{
@@ -191,14 +190,11 @@ app.get("/data/:collection/:time", function(req, res) {
     } else {
         let range = []
         let avg = []
-        leveldb.createReadStream({gt: collectionName})
+        leveldb.createReadStream({gt: collectionName + "-", lt: collectionName + "."})
             .on('data', function(data) {
-                if (data.key.includes(collectionName)) {
-                    let key = Number(data.key.replace(collectionName + "-", ""))
-                    range.push([key, data.value.min, data.value.max])
-                    let average = Number((data.value.acc / data.value.cnt).toFixed(2))
-                    avg.push([key, average])
-                }
+                let t = data.key.split("-")[3]
+                range.push([t, data.value[2], data.value[3]])
+                avg.push([t, Number((data.value[1] / data.value[0]).toFixed(2))])
             })
             .on('end', function() {
                 res.json([{
@@ -222,10 +218,6 @@ var client = mqtt.connect("mqtt://localhost", {
 
 client.on("connect", function() {
     client.subscribe("#")
-})
-
-let leveldb = require("level")("./hemdb", {
-    valueEncoding: "json"
 })
 
 client.on("message", function(topic, message) {
@@ -300,16 +292,16 @@ client.on("message", function(topic, message) {
             updateCnt(leveldb, "hvac-cool", 0.25);
             let key = "hvac-cool-28-" + getMonthBucket();
             leveldb.get(key, function(error, data) {
-                if (!error || typeof data.d === 'number') {
-                    client.publish("hvac/coolTime", data.d.toFixed(2));
+                if (!error || typeof data === 'number') {
+                    client.publish("hvac/coolTime", data.toFixed(2));
                 }
             })
         } else if (message.indexOf("HeatOn") > -1 || message.indexOf("Heating") > -1) {
             updateCnt(leveldb, "hvac-heat", 0.25);
             let key = "hvac-heat-28-" + getMonthBucket();
             leveldb.get(key, function(error, data) {
-                if (!error || typeof data.d === 'number') {
-                    client.publish("hvac/heatTime", data.d.toFixed(2));
+                if (!error || typeof data === 'number') {
+                    client.publish("hvac/heatTime", data.toFixed(2));
                 }
             })
         }
@@ -319,8 +311,8 @@ client.on("message", function(topic, message) {
         updateCnt(leveldb, "power-kWh", 0.001);
         let key = "power-kWh-28-" + getMonthBucket();
         leveldb.get(key, function(error, data) {
-            if (!error || typeof data.d === 'number') {
-                client.publish("power/kWh", data.d.toFixed(3));
+            if (!error || typeof data === 'number') {
+                client.publish("power/kWh", data.toFixed(3));
             }
         })
     } else if (topic.indexOf("water-GPM") > -1) {
@@ -329,8 +321,8 @@ client.on("message", function(topic, message) {
         updateCnt(leveldb, "water-Gal", 0.25)
         let key = "water-Gal-28-" + getMonthBucket();
         leveldb.get(key, function(error, data) {
-            if (!error || typeof data.d === 'number') {
-                client.publish("water/Gal", data.d.toFixed(2))
+            if (!error || typeof data === 'number') {
+                client.publish("water/Gal", data.toFixed(2))
             }
         })
     } else if (topic.indexOf("temp-") > -1) {
@@ -350,30 +342,13 @@ function getMonthBucket() {
 }
 
 function insertNow(db, topic, message) {
-    let key = topic;
-
-    db.get(key, function(error, data) {
-        if (error) {
-            db.put(key, [{
-                "t": Date.now(),
-                "d": Number(message)
-            }])
-        } else {
-            let last = data.push({
-                "t": Date.now(),
-                "d": Number(message)
-            })
-            if (((data[last - 1].t - data[0].t) / 1000 / 60 / 60) > 48) {
-                data.shift()
-            }
-            db.put(key, data)
-        }
-    })
+    let key = topic + "-00-" + Date.now();
+    db.put(key, Number(message))
 }
 
 function insertAvg(db, topic, message) {
     let buckets = [
-        [5, Math.floor(Date.now() / (5 * 60 * 1000)) * 5 * 60 * 1000],
+        ["05", Math.floor(Date.now() / (5 * 60 * 1000)) * 5 * 60 * 1000],
         [15, Math.floor(Date.now() / (15 * 60 * 1000)) * 15 * 60 * 1000],
         [60, Math.floor(Date.now() / (60 * 60 * 1000)) * 60 * 60 * 1000],
         [24, new Date().setHours(0, 0, 0, 0)],
@@ -384,17 +359,17 @@ function insertAvg(db, topic, message) {
         let key = topic + "-" + currentValue[0] + "-" + currentValue[1];
         db.get(key, function(error, data) {
             if (error) {
-                db.put(key, {
-                    "cnt": 1,
-                    "acc": Number(message),
-                    "min": Number(message),
-                    "max": Number(message)
-                })
+                db.put(key, [
+                    1,
+                    Number(message),
+                    Number(message),
+                    Number(message)
+                ])
             } else {
-                data.cnt += 1
-                data.acc += Number(message)
-                data.min = Math.min(data.min, Number(message))
-                data.max = Math.max(data.max, Number(message))
+                data[0] += 1
+                data[1] += Number(message)
+                data[2] = Math.min(data[2], Number(message))
+                data[3] = Math.max(data[3], Number(message))
                 db.put(key, data)
             }
         })
@@ -403,7 +378,7 @@ function insertAvg(db, topic, message) {
 
 function updateCnt(db, topic, incValue) {
     let buckets = [
-        [5, Math.floor(Date.now() / (5 * 60 * 1000)) * 5 * 60 * 1000],
+        ["05", Math.floor(Date.now() / (5 * 60 * 1000)) * 5 * 60 * 1000],
         [15, Math.floor(Date.now() / (15 * 60 * 1000)) * 15 * 60 * 1000],
         [60, Math.floor(Date.now() / (60 * 60 * 1000)) * 60 * 60 * 1000],
         [24, new Date().setHours(0, 0, 0, 0)],
@@ -414,13 +389,9 @@ function updateCnt(db, topic, incValue) {
         let key = topic + "-" + currentValue[0] + "-" + currentValue[1];
         db.get(key, function(error, data) {
             if (error) {
-                db.put(key, {
-                    "d": incValue
-                })
+                db.put(key, incValue)
             } else {
-                db.put(key, {
-                    "d": Number(Number(data.d + incValue).toFixed(3))
-                })
+                db.put(key, Number(Number(data + incValue).toFixed(3)))
             }
         })
     })

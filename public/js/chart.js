@@ -41,7 +41,7 @@ $(function() {
 
     function updateChart(collection, time, title, sub, unit) {
         var url;
-        if (time == '0'){
+        if (time == '00'){
           url = '/data/' + collection;
         }else{
           url = '/data/' + collection + '/' + time;
