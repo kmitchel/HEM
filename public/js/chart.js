@@ -8,7 +8,8 @@ $(function() {
     var chart = new Highcharts.Chart({
         chart: {
             renderTo: 'container',
-            type: 'line'
+            type: 'line',
+            zoomType: "x"
         },
         title: {
             text: 'Loading...'
@@ -32,19 +33,19 @@ $(function() {
     });
 
 
-    updateChart($('.type .selected').attr('id'), $('.time .selected').attr('id'),$('.type .selected').attr('data-title'), $('.time .selected').attr('data-sub'),$('.type .selected').attr('data-unit'));
+    updateChart($('.type .selected').attr('id'), $('.time .selected').attr('id'),$('.past .selected').attr('id'),$('.type .selected').attr('data-title'), $('.time .selected').attr('data-sub'),$('.type .selected').attr('data-unit'));
 
     $('.btnGroup > button').click(function() {
         $(this).addClass('selected').siblings().removeClass('selected');
-        updateChart($('.type .selected').attr('id'), $('.time .selected').attr('id'),$('.type .selected').attr('data-title'), $('.time .selected').attr('data-sub'),$('.type .selected').attr('data-unit'));
+        updateChart($('.type .selected').attr('id'), $('.time .selected').attr('id'),$('.past .selected').attr('id'),$('.type .selected').attr('data-title'), $('.time .selected').attr('data-sub'),$('.type .selected').attr('data-unit'));
     });
 
-    function updateChart(collection, time, title, sub, unit) {
+    function updateChart(collection, time, past, title, sub, unit) {
         var url;
         if (time == '00'){
-          url = '/data/' + collection;
+          url = '/data/' + collection + "/" + past;
         }else{
-          url = '/data/' + collection + '/' + time;
+          url = '/data/' + collection + '/' + time + "/" + past;
         }
 
         $.getJSON(url, function(data) {

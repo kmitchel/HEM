@@ -14,9 +14,12 @@ child.stderr.on("data", function(data) {
 
 //Webserver
 var express = require("express")
+var compression = require('compression')
 var app = express()
 var server = require("http").Server(app)
 server.listen(8080)
+
+app.use(compression())
 
 var spawn = require("child_process").spawn
 var SunCalc = require("suncalc")
@@ -149,35 +152,71 @@ let leveldb = require("level")("./hemdb", {
     valueEncoding: "json"
 })
 
-app.get("/data/:collection", function(req, res) {
+app.get("/data/:collection/:past", function(req, res) {
     var collectionName
+    var past
+
     if ("collection" in req.params) {
         collectionName = req.params.collection
     }
-    var out = []
 
-    leveldb.createReadStream({gt: collectionName + "-00-", lt: collectionName + "-00."})
+    if ("past" in req.params){
+        past = req.params.past
+    } else {
+        past = "01"
+    }
+
+    var out = []
+    var index = 0
+
+    if (past == '0') {
+        past =""
+    } else {
+        past = Date.now() - Number(past) * 60 * 60 * 1000
+    }
+
+    leveldb.createReadStream({gt: collectionName + "-00-" + past, lt: collectionName + "-00."})
     .on('data', function(data) {
         let t = data.key.split("-")[3]
-        out.push([Number(t), data.value])
+        out[index] = [Number(t), data.value]
+        index++
     })
     .on('end', function() {
-        res.json([{
-            data: out
-        }])
+        if (collectionName == "water-GPM") {
+            res.json([{
+                data: out,
+                type: "bar"
+            }])
+        } else {
+            res.json([{
+                data: out
+            }])
+        }
     })
 })
 
-app.get("/data/:collection/:time", function(req, res) {
+app.get("/data/:collection/:time/:past", function(req, res) {
     var collectionName
     if ("collection" in req.params && "time" in req.params) {
         collectionName = req.params.collection + "-" + req.params.time
     }
 
+    if ("past" in req.params){
+        past = req.params.past
+    } else {
+        past = "01"
+    }
+
+    if (past == '0') {
+        past =""
+    } else {
+        past = Date.now() - Number(past) * 60 * 60 * 1000
+    }
+
     if (req.params.collection === "power-kWh" || req.params.collection === "water-Gal") {
 
         let out = []
-        leveldb.createReadStream({gt: collectionName + "-", lt: collectionName + "."})
+        leveldb.createReadStream({gt: collectionName + "-" + past, lt: collectionName + "."})
             .on('data', function(data) {
                 let t = data.key.split("-")[3]
                 out.push([Number(t), data.value])
@@ -190,11 +229,11 @@ app.get("/data/:collection/:time", function(req, res) {
     } else {
         let range = []
         let avg = []
-        leveldb.createReadStream({gt: collectionName + "-", lt: collectionName + "."})
+        leveldb.createReadStream({gt: collectionName + "-" + past, lt: collectionName + "."})
             .on('data', function(data) {
                 let t = data.key.split("-")[3]
-                range.push([t, data.value[2], data.value[3]])
-                avg.push([t, Number((data.value[1] / data.value[0]).toFixed(2))])
+                range.push([Number(t), data.value[2], data.value[3]])
+                avg.push([Number(t), Number((data.value[1] / data.value[0]).toFixed(2))])
             })
             .on('end', function() {
                 res.json([{
@@ -348,6 +387,7 @@ function insertNow(db, topic, message) {
 
 function insertAvg(db, topic, message) {
     let buckets = [
+        ["01", Math.floor(Date.now() / (1 * 60 * 1000)) * 1 * 60 * 1000],
         ["05", Math.floor(Date.now() / (5 * 60 * 1000)) * 5 * 60 * 1000],
         [15, Math.floor(Date.now() / (15 * 60 * 1000)) * 15 * 60 * 1000],
         [60, Math.floor(Date.now() / (60 * 60 * 1000)) * 60 * 60 * 1000],
@@ -378,6 +418,7 @@ function insertAvg(db, topic, message) {
 
 function updateCnt(db, topic, incValue) {
     let buckets = [
+        ["01", Math.floor(Date.now() / (1 * 60 * 1000)) * 1 * 60 * 1000],
         ["05", Math.floor(Date.now() / (5 * 60 * 1000)) * 5 * 60 * 1000],
         [15, Math.floor(Date.now() / (15 * 60 * 1000)) * 15 * 60 * 1000],
         [60, Math.floor(Date.now() / (60 * 60 * 1000)) * 60 * 60 * 1000],
@@ -396,3 +437,29 @@ function updateCnt(db, topic, incValue) {
         })
     })
 }
+
+const intervalObj = setInterval(() => {
+    leveldb.createKeyStream()
+    .on('data', function (data) {
+        let split = data.split("-")
+        if (split[2] == "00") {
+            if (Number(split[3]) < Date.now() - 48 * 60 * 60 * 1000){
+                leveldb.del(data)
+            }
+        }
+    })
+
+  }, 30 * 60 * 1000);
+
+
+//   const intObj = setInterval(() => {
+//     leveldb.createKeyStream()
+//     .on('data', function (data) {
+//         let split = data.split("-")
+//         if (split[2] == "01") {
+//                 console.log("Delete " + split[0] + " " + Number(split[3]))
+//                 leveldb.del(data)
+//         }
+//     })
+
+//   }, 5000);

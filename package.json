@@ -1,13 +1,12 @@
 {
-  "name": "hem2",
-  "version": "1.0.0",
+  "name": "hem",
+  "version": "2.0.0",
   "description": "Home Energy Management",
   "main": "index.js",
   "dependencies": {
+    "compression": "^1.7.4",
     "express": "^4.12.4",
     "level": "^7.0.1",
-    "leveldown": "^6.1.0",
-    "levelup": "^5.1.1",
     "mqtt": "^1.7.4",
     "suncalc": "^1.6.0"
   },
@@ -16,12 +15,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/kmitchel/HEM2.git"
+    "url": "https://github.com/kmitchel/hem.git"
   },
   "author": "Kenneth Mitchell <kmitchel46725@gmail.com>",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/kmitchel/HEM2/issues"
+    "url": "https://github.com/kmitchel/hem/issues"
   },
-  "homepage": "https://github.com/kmitchel/HEM2"
+  "homepage": "https://github.com/kmitchel/hem"
 }
