@@ -87,196 +87,146 @@
     <!-- Bootstrap core JavaScript
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="js/bootstrap.min.js"></script>
-    <script src="js/paho-mqtt.js"></script>
+    <script src="js/mqtt.min.js"></script>
 
 <script>
 $(function() {
 
 var temp = [];
 
-// Create a client instance
-client = new Paho.MQTT.Client(location.hostname, Number(9001), 'temp_' + Math.random().toString(16).substr(2, 8));
+var client = mqtt.connect("ws://kmitchel.ddns.net:9001")
 
-// set callback handlers
-client.onConnectionLost = onConnectionLost;
-client.onMessageArrived = onMessageArrived;
+client.on('error', function (err) {
+  console.log(err)
+  client.end()
+})
 
-// connect the client
-client.connect({
-    onSuccess: onConnect
-});
-//client.connect();
-
-// called when the client connects
-function onConnect() {
-    // Once a connection has been made, make a subscription and send a message.
-    console.log("onConnect");
-    client.subscribe("hvac/+");
+client.on('connect', function () {
+  client.subscribe("hvac/+");
     client.subscribe("temp/tempF");
     client.subscribe("temp/di");
     client.subscribe("temp/rh");
     client.subscribe("temp/280049724c2001be");
+    client.publish("hvac/coolSet", "?")
+    client.publish("hvac/heatSet", "?")
+  })
 
-    message = new Paho.MQTT.Message("?");
-    message.destinationName = "hvac/coolSet";
-    client.send(message);
-    message.destinationName = "hvac/heatSet";
-    client.send(message);
-}
-
-// called when the client loses its connection
-function onConnectionLost(responseObject) {
-    if (responseObject.errorCode !== 0) {
-        console.log("onConnectionLost:" + responseObject.errorMessage);
-    }
-    $('#disMQTT').removeClass('hide');
+client.on('close', function(){
+  $('#disMQTT').removeClass('hide');
     $('#disMQTT').click(function() {
-        client.connect();
+      client.reconnect()
         $('#disMQTT').addClass('hide');
     });
-}
+})
 
-// called when a message arrives
-function onMessageArrived(message) {
+client.on('message', function (topic, message) {
 
-    temp[message.destinationName] = message.payloadString;
+    temp[topic] = message.toString();
 
-    switch (message.destinationName) {
+    switch (topic) {
         case 'hvac/state':
-            $('#state').html(message.payloadString);
-            if (message.payloadString.includes("Heat")) {
+            $('#state').html(message.toString());
+            if (message.toString().includes("Heat")) {
                 $('#cool').removeClass('disabled');
                 $('#heat').addClass('disabled');
                 $('#off').removeClass('disabled');
             }
-            if (message.payloadString.includes("Cool")) {
+            if (message.toString().includes("Cool")) {
                 $('#heat').removeClass('disabled');
                 $('#cool').addClass('disabled');
                 $('#off').removeClass('disabled');
             }
-            if (message.payloadString.includes("Off")) {
+            if (message.toString().includes("Off")) {
                 $('#heat').removeClass('disabled');
                 $('#cool').removeClass('disabled');
                 $('#off').addClass('disabled');
             }
-
             break;
         case 'temp/tempF':
-            $('#temp').html(message.payloadString);
+            $('#temp').html(message.toString());
             break;
         case 'temp/di':
-            $('#di').html(message.payloadString);
+            $('#di').html(message.toString());
             break;
         case 'temp/rh':
-            $('#rh').html(message.payloadString);
+            $('#rh').html(message.toString());
             break;
         case 'hvac/coolSet':
-            if (message.payloadString == "?") break
-            if (Number(message.payloadString) < 60) {
-                messageFix = new Paho.MQTT.Message(Number(60).toString());
-                messageFix.destinationName = "hvac/coolSet";
-                client.send(messageFix);
+            if (message.toString() == "?") break
+            if (Number(message.toString()) < 60) {
+              client.publish("hvac/coolSet", "60")
             }
-            if (Number(message.payloadString) > 85) {
-                messageFix = new Paho.MQTT.Message(Number(85).toString());
-                messageFix.destinationName = "hvac/coolSet";
-                client.send(messageFix);
+            if (Number(message.toString()) > 85) {
+              client.publish("hvac/coolSet", "85")
             }
-            $('#coolSet').html(message.payloadString);
+            $('#coolSet').html(message.toString());
             setTimeout(function() {
                 $('#coolSetDown').removeClass("disabled");
                 $('#coolSetUp').removeClass("disabled");
             }, 250)
             break;
         case 'hvac/heatSet':
-            if (message.payloadString == "?") break
-            if (Number(message.payloadString) < 60) {
-                messageFix = new Paho.MQTT.Message(Number(60).toString());
-                messageFix.destinationName = "hvac/heatSet";
-                client.send(messageFix);
+            if (message.toString() == "?") break
+            if (Number(message.toString()) < 60) {
+              client.publish("hvac/heatSet", "60")
             }
-            if (Number(message.payloadString) > 85) {
-                messageFix = new Paho.MQTT.Message(Number(85).toString());
-                messageFix.destinationName = "hvac/heatSet";
-                client.send(messageFix);
+            if (Number(message.toString()) > 85) {
+              client.publish("hvac/heatSet", "85")
             }
-            $('#heatSet').html(message.payloadString);
-
+            $('#heatSet').html(message.toString());
             setTimeout(function() {
                 $('#heatSetDown').delay(1000).removeClass("disabled");
                 $('#heatSetUp').delay(1000).removeClass("disabled");
             }, 250)
             break;
         case 'temp/280049724c2001be':
-            $('#out').html(message.payloadString);
+            $('#out').html(message.toString());
             break;
     }
-}
+})
 
 $('#coolSetDown').click(function() {
     $('#coolSetDown').addClass("disabled")
     $("#coolSetUp").addClass("disabled")
-    message = new Paho.MQTT.Message((Number(temp['hvac/coolSet']) - 1).toString());
-    message.destinationName = "hvac/coolSet";
-    client.send(message);
-    message = new Paho.MQTT.Message('?');
-    message.destinationName = "hvac/coolSet";
-    client.send(message);
+    client.publish("hvac/coolSet", (Number(temp['hvac/coolSet']) - 1).toString())
+    client.publish("hvac/coolSet", "?")
 });
 
 $('#coolSetUp').click(function() {
     $('#coolSetDown').addClass("disabled")
     $('#coolSetUp').addClass("disabled")
-    message = new Paho.MQTT.Message((Number(temp['hvac/coolSet']) + 1).toString());
-    message.destinationName = "hvac/coolSet";
-    client.send(message);
-    message = new Paho.MQTT.Message('?');
-    message.destinationName = "hvac/coolSet";
-    client.send(message);
+    client.publish("hvac/coolSet", (Number(temp['hvac/coolSet']) + 1).toString())
+    client.publish("hvac/coolSet", "?")
 });
 
 $('#heatSetDown').click(function() {
     $('#heatSetDown').addClass("disabled");
     $('#heatSetUp').addClass("disabled");
-    message = new Paho.MQTT.Message((Number(temp['hvac/heatSet']) - 1).toString());
-    message.destinationName = "hvac/heatSet";
-    client.send(message);
-    message = new Paho.MQTT.Message('?');
-    message.destinationName = "hvac/heatSet";
-    client.send(message);
+    client.publish("hvac/heatSet", (Number(temp['hvac/heatSet']) - 1).toString())
+    client.publish("hvac/heatSet", "?")
 });
 
 $('#heatSetUp').click(function() {
     $('#heatSetDown').addClass("disabled");
     $('#heatSetUp').addClass("disabled");
-    message = new Paho.MQTT.Message((Number(temp['hvac/heatSet']) + 1).toString());
-    message.destinationName = "hvac/heatSet";
-    client.send(message);
-    message = new Paho.MQTT.Message('?');
-    message.destinationName = "hvac/heatSet";
-    client.send(message);
+    client.publish("hvac/heatSet", (Number(temp['hvac/heatSet']) + 1).toString())
+    client.publish("hvac/heatSet", "?")
 });
 
 $('#heat').click(function() {
-    message = new Paho.MQTT.Message("heat");
-    message.destinationName = "hvac/mode";
-    client.send(message);
+    client.publish("hvac/mode", "heat")
     $('#heat').addClass('disabled');
 });
 
 $('#cool').click(function() {
-    message = new Paho.MQTT.Message("cool");
-    message.destinationName = "hvac/mode";
-    client.send(message);
+    client.publish("hvac/mode", "cool")
     $('#cool').addClass('disabled');
 });
 
 $('#off').click(function() {
-    message = new Paho.MQTT.Message("off");
-    message.destinationName = "hvac/mode";
-    client.send(message);
+    client.publish("hvac/mode", "off")
     $('#off').addClass('disabled');
 });
 
