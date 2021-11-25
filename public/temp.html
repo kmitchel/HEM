@@ -48,7 +48,7 @@
 
           <div class="inner cover">
             <h1 class="cover-heading"><span id="temp"></span> F</h1>
-            <div class="lead">
+            <div>
               <p>Humidity:  <span id="rh"></span> %</p>
               <p>Discomfort:  <span id="di"></span> F</p>
               <p>Outdoor Temp: <span id="out"></span> F </p>
@@ -58,33 +58,30 @@
             <h3 class="text-info">
               Cool Setpoint</h3>
               <span class="btn btn-default btn-xs glyphicon glyphicon-minus disabled" id="coolSetDown"></span>
-              <span id="coolSet"></span>
+              <span id="coolSet" class="lead"></span>
               <span class="btn btn-default btn-xs glyphicon glyphicon-plus disabled" id="coolSetUp"></span>
           </div>
           <div>
             <h3 class="text-danger">
               Heat Setpoint</h3>
               <span class="btn btn-default btn-xs glyphicon glyphicon-minus disabled" id="heatSetDown"></span>
-              <span id="heatSet"></span>
+              <span id="heatSet" class="lead"></span>
               <span class="btn btn-default btn-xs glyphicon glyphicon-plus disabled" id="heatSetUp"></span>
             </div>
             <p class="lead" id="status"></p>
           </div>
-<div>
-<p><span class="disabled btn btn-danger" id="heat">Heat Mode</span></p>
-<p><span class="disabled btn btn-info" id="cool">Cool Mode</span></p>
-<p><span class="disabled btn btn-default" id="off">Off Mode</span></p>
-</div>
+          <div>
+            <p><span class="disabled btn btn-info" id="cool">Cool Mode</span></p>
+            <p><span class="disabled btn btn-danger" id="heat">Heat Mode</span></p>
+            <p><span class="disabled btn btn-default" id="off">Off Mode</span></p>
+          </div>
           <div class="mastfoot">
             <div class="inner">
               <p>Home Energy Management</p>
             </div>
           </div>
-
         </div>
-
       </div>
-
     </div>
 
     <!-- Bootstrap core JavaScript
@@ -192,8 +189,6 @@ function onMessageArrived(message) {
                 $('#coolSetDown').removeClass("disabled");
                 $('#coolSetUp').removeClass("disabled");
             }, 250)
-
-
             break;
         case 'hvac/heatSet':
             if (message.payloadString == "?") break
@@ -287,6 +282,5 @@ $('#off').click(function() {
 
 });
 </script>
-
-  </body>
+</body>
 </html>

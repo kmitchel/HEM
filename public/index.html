@@ -55,8 +55,8 @@
     <img id="wh24" width=100%>
     <br>
     <img id="gpm24" width=100%>
-    <script src="http://code.jquery.com/jquery-2.1.0.min.js"></script>
-    <script src="js/mqttws31.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="js/mqtt.min.js"></script>
 
     <script>
         $(function() {
@@ -83,96 +83,93 @@
                 loadImg(time());
             });
 
+var client = mqtt.connect("ws://kmitchel.ddns.net:9001")
 
-            client = new Paho.MQTT.Client(location.hostname, Number(9001), 'index_' + Math.random().toString(16).substr(2, 8));
-            client.connect({
-                onSuccess: onConnect
-            });
-            client.onMessageArrived = onMessageArrived;
-            client.onConnectionLost = onConnectionLost;
+client.on('error', function (err) {
+  console.log(err)
+  client.end()
+})
 
+client.on('connect', function () {
+  client.subscribe('#')
+})
 
-            function onConnect() {
-                // Once a connection has been made, make a subscription and send a message.
-                client.subscribe("#");
+client.on('message', function (topic, message, packet) {
+    switch (topic) {
+        case 'hvac/state':
+            $('#state').html(message.toString());
+            break;
+
+        case 'power/W':
+            $('#power').html('Current Power: ' + message.toString() + 'W');
+            break;
+
+        case 'temp/280049724c2001be':
+            $('#out').html('Outside Temp:  ' + message.toString() + 'F');
+            break;
+
+        case 'temp/2809853f030000a7':
+            $('#upper').html('Upper WH Temp:  ' + message.toString() + 'F');
+            break;
+
+        case 'temp/2813513f03000072':
+            $('#lower').html('Lower WH Temp:  ' + message.toString() + 'F');
+            break;
+
+        case 'temp/289fa756b5013c68':
+            $('#achigh').html('High AC Temp:  ' + message.toString() + 'F');
+            break;
+
+        case 'temp/2874913c46200105':
+            $('#aclow').html('Low AC Temp:  ' + message.toString() + 'F');
+            break;
+
+        case 'water/Gal':
+            $('#gal').html('Gallons:  ' + message.toString());
+            break;
+
+        case 'water/GPM':
+            $('#gpm').html(message.toString() + ' GPM');
+            break;
+
+        case 'temp/tempF':
+            $('#t').html('Inside Temp: ' + message.toString() + 'F');
+            break;
+
+        case 'temp/rh':
+            $('#rh').html('RH: ' + message.toString() + '%');
+            break;
+
+        case 'temp/dewF':
+            $('#dew').html('DEW: ' + message.toString() + 'F');
+            break;
+
+        case 'power/kWh':
+            var cost = (message * 0.105 + 19) * 1.07;
+            var month;
+            if (new Date().getDate() > 6) {
+                month = new Date().getMonth();
+            } else {
+                month = new Date().getMonth() - 1;
             }
+            var startOfBillingCycle = new Date(new Date().getFullYear(), month, 7).getTime();
+            var endOfBillingCycle = new Date(new Date().getFullYear(), month + 1, 7).getTime();
+            var projectedkWh = Number(message) / (new Date().getTime() - startOfBillingCycle) * (endOfBillingCycle - startOfBillingCycle);
+            var projectedCost = (projectedkWh * 0.105 + 19) * 1.07;
+            $('#kWh').html(message.toString() + ' kWh @ $' + cost.toFixed(2) + '<br>Projected Monthly Cost:  ' + projectedkWh.toFixed(2) + 'kWh @ $' + projectedCost.toFixed(2));
+            break
 
-            function onConnectionLost(responseObject) {
-              if (responseObject.errorCode !== 0) {
-                console.log("onConnectionLost:"+responseObject.errorMessage);
-              }
+        case "hvac/coolTime":
+            $("#cool").html("Cool Runtime: " + message.toString() + " Min")
+            break
 
-            }
-            function onMessageArrived(message) {
+        case "hvac/heatTime":
+            $("#heat").html("Heat Runtime: " + message.toString() + " Min")
+            break
 
-                switch (message.destinationName) {
-                    case 'hvac/state':
-                        $('#state').html(message.payloadString);
-                        break;
-                    case 'power/W':
-                        $('#power').html('Current Power: ' + message.payloadString + 'W');
-                        break;
-                    case 'temp/280049724c2001be':
-                        $('#out').html('Outside Temp:  ' + message.payloadString + 'F');
-                        break;
-                    case 'temp/2809853f030000a7':
-                        $('#upper').html('Upper WH Temp:  ' + message.payloadString + 'F');
-                        break;
-                    case 'temp/2813513f03000072':
-                        $('#lower').html('Lower WH Temp:  ' + message.payloadString + 'F');
-                        break;
-                    case 'temp/289fa756b5013c68':
-                        $('#achigh').html('High AC Temp:  ' + message.payloadString + 'F');
-                        break;
-                    case 'temp/2874913c46200105':
-                        $('#aclow').html('Low AC Temp:  ' + message.payloadString + 'F');
-                        break;
-                    case 'water/Gal':
-                        $('#gal').html('Gallons:  ' + message.payloadString);
-                        break;
-                    case 'water/GPM':
-                        $('#gpm').html(message.payloadString + ' GPM');
-                        break;
-                    case 'temp/tempF':
-                        $('#t').html('Inside Temp: ' + message.payloadString + 'F');
-                        break;
-                    case 'temp/rh':
-                        $('#rh').html('RH: ' + message.payloadString + '%');
-                        break;
-                    case 'temp/dewF':
-                        $('#dew').html('DEW: ' + message.payloadString + 'F');
-                        break;
-
-                    case 'power/kWh':
-                        var cost = (message.payloadString * 0.105 + 19) * 1.07;
-
-                        var month;
-                        if (new Date().getDate() > 6) {
-                            month = new Date().getMonth();
-                        } else {
-                            month = new Date().getMonth() - 1;
-                        }
-
-                        var startOfBillingCycle = new Date(new Date().getFullYear(), month, 7).getTime();
-                        var endOfBillingCycle = new Date(new Date().getFullYear(), month + 1, 7).getTime();
-
-                        var projectedkWh = message.payloadString / (new Date().getTime() - startOfBillingCycle) * (endOfBillingCycle - startOfBillingCycle);
-
-                        var projectedCost = (projectedkWh * 0.105 + 19) * 1.07;
-
-                        $('#kWh').html(message.payloadString + ' kWh @ $' + cost.toFixed(2) + '<br>Projected Monthly Cost:  ' + projectedkWh.toFixed(2) + 'kWh @ $' + projectedCost.toFixed(2));
-                        break
-                    case "hvac/coolTime":
-                        $("#cool").html("Cool Runtime: " + message.payloadString + " Min")
-                        break
-                    case "hvac/heatTime":
-                        $("#heat").html("Heat Runtime: " + message.payloadString + " Min")
-                        break
-                }
-            }
-
-        });
-    </script>
+        }
+    })
+})
+</script>
 </body>
-
 </html>
