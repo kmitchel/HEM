@@ -42,6 +42,40 @@ $(function() {
 
     function updateChart(collection, time, past, title, sub, unit) {
         var url;
+
+        if (collection == "wh")
+        {
+            if(time == "00") {
+                urlUpper = "/data/temp-2809853f030000a7/" + past
+                urlLower = "/data/temp-2813513f03000072/" + past
+            } else{
+                urlUpper = "/data/temp-2809853f030000a7/" + time + "/" + past 
+                urlLower = "/data/temp-2813513f03000072/" + time + "/" + past
+            }
+
+            while (chart.series.length > 0) {
+                chart.series[0].remove(false);
+            }
+
+            chart.setTitle({text:title},{text:sub});
+            chart.yAxis[0].setTitle({text:unit});
+
+            $.getJSON(urlUpper, function(data){
+                data.forEach(function(element) {
+                    chart.addSeries(element);
+                });
+    
+            })
+            $.getJSON(urlLower, function(data){
+                data.forEach(function(element) {
+                    chart.addSeries(element);
+                });
+                    
+            })
+
+
+        } else {
+
         if (time == '00'){
           url = '/data/' + collection + "/" + past;
         }else{
@@ -64,5 +98,6 @@ $(function() {
             $('.btnGroup').removeClass('hide');
 
         });
+    }
     }
 });

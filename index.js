@@ -213,7 +213,7 @@ app.get("/data/:collection/:time/:past", function(req, res) {
         past = Date.now() - Number(past) * 60 * 60 * 1000
     }
 
-    if (req.params.collection === "power-kWh" || req.params.collection === "water-Gal") {
+    if (req.params.collection === "power-kWh" || req.params.collection === "water-Gal" || req.params.collection === "hvac-heat") {
 
         let out = []
         leveldb.createReadStream({gt: collectionName + "-" + past, lt: collectionName + "."})
@@ -327,7 +327,7 @@ client.on("message", function(topic, message) {
     topic = topic.split("/").join("-");
 
     if (topic.indexOf("hvac-state") > -1) {
-        if (message.indexOf("CoolOn") > -1 || message.indexOf("Cooling") > -1) {
+        if (message.toString() == "Cooling" || message.toString() == "CoolOn") {
             updateCnt(leveldb, "hvac-cool", 0.25);
             let key = "hvac-cool-28-" + getMonthBucket();
             leveldb.get(key, function(error, data) {
@@ -335,7 +335,7 @@ client.on("message", function(topic, message) {
                     client.publish("hvac/coolTime", data.toFixed(2));
                 }
             })
-        } else if (message.indexOf("HeatOn") > -1 || message.indexOf("Heating") > -1) {
+        } else if (message.toString() == "Heating" || message.toString() == "HeatOn") {
             updateCnt(leveldb, "hvac-heat", 0.25);
             let key = "hvac-heat-28-" + getMonthBucket();
             leveldb.get(key, function(error, data) {

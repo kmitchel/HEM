@@ -55,32 +55,26 @@
               <p><span id="state"></span></p>
             </div>
             <div>
-            <p>
-              Cool
-              <span class="btn btn-default btn-xs glyphicon glyphicon-minus" id="coolSetDown"></span>
+            <h3 class="text-info">
+              Cool Setpoint</h3>
+              <span class="btn btn-default btn-xs glyphicon glyphicon-minus disabled" id="coolSetDown"></span>
               <span id="coolSet"></span>
-              <span class="btn btn-default btn-xs glyphicon glyphicon-plus" id="coolSetUp"></span>
-              F
-            </p>
+              <span class="btn btn-default btn-xs glyphicon glyphicon-plus disabled" id="coolSetUp"></span>
           </div>
           <div>
-            <p>
-              Heat
-              <span class="btn btn-default btn-xs glyphicon glyphicon-minus" id="heatSetDown"></span>
+            <h3 class="text-danger">
+              Heat Setpoint</h3>
+              <span class="btn btn-default btn-xs glyphicon glyphicon-minus disabled" id="heatSetDown"></span>
               <span id="heatSet"></span>
-              <span class="btn btn-default btn-xs glyphicon glyphicon-plus" id="heatSetUp"></span>
-              F
-            </p>
+              <span class="btn btn-default btn-xs glyphicon glyphicon-plus disabled" id="heatSetUp"></span>
             </div>
             <p class="lead" id="status"></p>
           </div>
 <div>
-<span class="hide" id="heat" style="background-color:red">Heat Mode</span>
-<span class="hide" id="cool" style="background-color:blue">Cool Mode</span>
-<span class="hide" id="off" style="background-color:grey">Off Mode</span>
+<p><span class="disabled btn btn-danger" id="heat">Heat Mode</span></p>
+<p><span class="disabled btn btn-info" id="cool">Cool Mode</span></p>
+<p><span class="disabled btn btn-default" id="off">Off Mode</span></p>
 </div>
-
-
           <div class="mastfoot">
             <div class="inner">
               <p>Home Energy Management</p>
@@ -101,11 +95,11 @@
     <script src="js/paho-mqtt.js"></script>
 
 <script>
-$(function(){
+$(function() {
 
-var temp =[];
+var temp = [];
 
-  // Create a client instance
+// Create a client instance
 client = new Paho.MQTT.Client(location.hostname, Number(9001), 'temp_' + Math.random().toString(16).substr(2, 8));
 
 // set callback handlers
@@ -113,170 +107,183 @@ client.onConnectionLost = onConnectionLost;
 client.onMessageArrived = onMessageArrived;
 
 // connect the client
-client.connect({onSuccess:onConnect});
+client.connect({
+    onSuccess: onConnect
+});
 //client.connect();
 
 // called when the client connects
 function onConnect() {
-  // Once a connection has been made, make a subscription and send a message.
-  console.log("onConnect");
-  client.subscribe("hvac/+");
-  client.subscribe("temp/tempF");
-  client.subscribe("temp/di");
-  client.subscribe("temp/rh");
-  client.subscribe("temp/280049724c2001be");
+    // Once a connection has been made, make a subscription and send a message.
+    console.log("onConnect");
+    client.subscribe("hvac/+");
+    client.subscribe("temp/tempF");
+    client.subscribe("temp/di");
+    client.subscribe("temp/rh");
+    client.subscribe("temp/280049724c2001be");
 
-
-  message = new Paho.MQTT.Message("?");
-  message.destinationName = "hvac/coolSet";
-  client.send(message);
-  message.destinationName = "hvac/heatSet";
-  client.send(message);
+    message = new Paho.MQTT.Message("?");
+    message.destinationName = "hvac/coolSet";
+    client.send(message);
+    message.destinationName = "hvac/heatSet";
+    client.send(message);
 }
 
 // called when the client loses its connection
 function onConnectionLost(responseObject) {
-  if (responseObject.errorCode !== 0) {
-    console.log("onConnectionLost:"+responseObject.errorMessage);
-  }
-  $('#disMQTT').removeClass('hide');
-  $('#disMQTT').click(function(){
-    client.connect();
-    $('#disMQTT').addClass('hide');
+    if (responseObject.errorCode !== 0) {
+        console.log("onConnectionLost:" + responseObject.errorMessage);
     }
-  );
+    $('#disMQTT').removeClass('hide');
+    $('#disMQTT').click(function() {
+        client.connect();
+        $('#disMQTT').addClass('hide');
+    });
 }
 
 // called when a message arrives
 function onMessageArrived(message) {
 
-temp[message.destinationName] = message.payloadString;
+    temp[message.destinationName] = message.payloadString;
 
-  switch(message.destinationName){
-    case 'hvac/state':
-      $('#state').html(message.payloadString);
-	if(message.payloadString.includes("Heat")) {
-		$('#cool').removeClass('hide');
-                $('#heat').addClass('hide');
-		$('#off').removeClass('hide');
-	}
-        if(message.payloadString.includes("Cool")) {
-                $('#heat').removeClass('hide');
-                $('#cool').addClass('hide');
-		$('#off').removeClass('hide');
-        }
-	if(message.payloadString.includes("Off")) {
-		$('#heat').removeClass('hide');
-		$('#cool').removeClass('hide');
-		$('#off').addClass('hide');
-	}
+    switch (message.destinationName) {
+        case 'hvac/state':
+            $('#state').html(message.payloadString);
+            if (message.payloadString.includes("Heat")) {
+                $('#cool').removeClass('disabled');
+                $('#heat').addClass('disabled');
+                $('#off').removeClass('disabled');
+            }
+            if (message.payloadString.includes("Cool")) {
+                $('#heat').removeClass('disabled');
+                $('#cool').addClass('disabled');
+                $('#off').removeClass('disabled');
+            }
+            if (message.payloadString.includes("Off")) {
+                $('#heat').removeClass('disabled');
+                $('#cool').removeClass('disabled');
+                $('#off').addClass('disabled');
+            }
 
-      break;
-    case 'temp/tempF':
-      $('#temp').html(message.payloadString);
-      break;
-    case 'temp/di':
-      $('#di').html(message.payloadString);
-      break;
-    case 'temp/rh':
-      $('#rh').html(message.payloadString);
-      break;
-      case 'hvac/coolSet':
-      if (Number(message.payloadString) < 60) {
-        messageFix = new Paho.MQTT.Message(Number(60).toString());
-        messageFix.destinationName = "hvac/coolSet";
-        client.send(messageFix);
-      }
-      if (Number(message.payloadString) > 85) {
-        messageFix = new Paho.MQTT.Message(Number(85).toString());
-        messageFix.destinationName = "hvac/coolSet";
-        client.send(messageFix);
-      }
-      $('#coolSetDown').show();
-      $('#coolSetUp').show();
-      $('#coolSet').html(message.payloadString);
-      break;
-    case 'hvac/heatSet':
-      if (Number(message.payloadString) < 60) {
-        messageFix = new Paho.MQTT.Message(Number(60).toString());
-        messageFix.destinationName = "hvac/heatSet";
-        client.send(messageFix);
-      }
-      if (Number(message.payloadString) > 85) {
-        messageFix = new Paho.MQTT.Message(Number(85).toString());
-        messageFix.destinationName = "hvac/heatSet";
-        client.send(messageFix);
-      }
-      $('#heatSetDown').show();
-      $('#heatSetUp').show();
-      $('#heatSet').html(message.payloadString);
-      break;
-    case 'temp/280049724c2001be':
-      $('#out').html(message.payloadString);
-      break;
-  }
+            break;
+        case 'temp/tempF':
+            $('#temp').html(message.payloadString);
+            break;
+        case 'temp/di':
+            $('#di').html(message.payloadString);
+            break;
+        case 'temp/rh':
+            $('#rh').html(message.payloadString);
+            break;
+        case 'hvac/coolSet':
+            if (message.payloadString == "?") break
+            if (Number(message.payloadString) < 60) {
+                messageFix = new Paho.MQTT.Message(Number(60).toString());
+                messageFix.destinationName = "hvac/coolSet";
+                client.send(messageFix);
+            }
+            if (Number(message.payloadString) > 85) {
+                messageFix = new Paho.MQTT.Message(Number(85).toString());
+                messageFix.destinationName = "hvac/coolSet";
+                client.send(messageFix);
+            }
+            $('#coolSet').html(message.payloadString);
+            setTimeout(function() {
+                $('#coolSetDown').removeClass("disabled");
+                $('#coolSetUp').removeClass("disabled");
+            }, 250)
+
+
+            break;
+        case 'hvac/heatSet':
+            if (message.payloadString == "?") break
+            if (Number(message.payloadString) < 60) {
+                messageFix = new Paho.MQTT.Message(Number(60).toString());
+                messageFix.destinationName = "hvac/heatSet";
+                client.send(messageFix);
+            }
+            if (Number(message.payloadString) > 85) {
+                messageFix = new Paho.MQTT.Message(Number(85).toString());
+                messageFix.destinationName = "hvac/heatSet";
+                client.send(messageFix);
+            }
+            $('#heatSet').html(message.payloadString);
+
+            setTimeout(function() {
+                $('#heatSetDown').delay(1000).removeClass("disabled");
+                $('#heatSetUp').delay(1000).removeClass("disabled");
+            }, 250)
+            break;
+        case 'temp/280049724c2001be':
+            $('#out').html(message.payloadString);
+            break;
+    }
 }
 
-    $('#coolSetDown').click(function(){
-        $('#coolSetDown').hide();
-        message = new Paho.MQTT.Message((temp['hvac/coolSet'] - 1).toString());
-        message.destinationName = "hvac/coolSet";
-        client.send(message);
-        message = new Paho.MQTT.Message('?');
-        message.destinationName = "hvac/coolSet";
-        client.send(message);
-    });
+$('#coolSetDown').click(function() {
+    $('#coolSetDown').addClass("disabled")
+    $("#coolSetUp").addClass("disabled")
+    message = new Paho.MQTT.Message((Number(temp['hvac/coolSet']) - 1).toString());
+    message.destinationName = "hvac/coolSet";
+    client.send(message);
+    message = new Paho.MQTT.Message('?');
+    message.destinationName = "hvac/coolSet";
+    client.send(message);
+});
 
-    $('#coolSetUp').click(function(){
-        $('#coolSetUp').hide();
-        message = new Paho.MQTT.Message((Number(temp['hvac/coolSet']) + 1).toString());
-        message.destinationName = "hvac/coolSet";
-        client.send(message);
-        message = new Paho.MQTT.Message('?');
-        message.destinationName = "hvac/coolSet";
-        client.send(message);
-    });
+$('#coolSetUp').click(function() {
+    $('#coolSetDown').addClass("disabled")
+    $('#coolSetUp').addClass("disabled")
+    message = new Paho.MQTT.Message((Number(temp['hvac/coolSet']) + 1).toString());
+    message.destinationName = "hvac/coolSet";
+    client.send(message);
+    message = new Paho.MQTT.Message('?');
+    message.destinationName = "hvac/coolSet";
+    client.send(message);
+});
 
-    $('#heatSetDown').click(function(){
-        $('#heatSetDown').hide();
-        message = new Paho.MQTT.Message((temp['hvac/heatSet'] - 1).toString());
-        message.destinationName = "hvac/heatSet";
-        client.send(message);
-        message = new Paho.MQTT.Message('?');
-        message.destinationName = "hvac/heatSet";
-        client.send(message);
-    });
+$('#heatSetDown').click(function() {
+    $('#heatSetDown').addClass("disabled");
+    $('#heatSetUp').addClass("disabled");
+    message = new Paho.MQTT.Message((Number(temp['hvac/heatSet']) - 1).toString());
+    message.destinationName = "hvac/heatSet";
+    client.send(message);
+    message = new Paho.MQTT.Message('?');
+    message.destinationName = "hvac/heatSet";
+    client.send(message);
+});
 
-    $('#heatSetUp').click(function(){
-        $('#heatSetUp').hide();
-        message = new Paho.MQTT.Message((Number(temp['hvac/heatSet']) + 1).toString());
-        message.destinationName = "hvac/heatSet";
-        client.send(message);
-        message = new Paho.MQTT.Message('?');
-        message.destinationName = "hvac/heatSet";
-        client.send(message);
-    });
+$('#heatSetUp').click(function() {
+    $('#heatSetDown').addClass("disabled");
+    $('#heatSetUp').addClass("disabled");
+    message = new Paho.MQTT.Message((Number(temp['hvac/heatSet']) + 1).toString());
+    message.destinationName = "hvac/heatSet";
+    client.send(message);
+    message = new Paho.MQTT.Message('?');
+    message.destinationName = "hvac/heatSet";
+    client.send(message);
+});
 
-    $('#heat').click(function(){
-        message = new Paho.MQTT.Message("heat");
-        message.destinationName = "hvac/mode";
-        client.send(message);
-        $('#heat').addClass('hide');
-    });
+$('#heat').click(function() {
+    message = new Paho.MQTT.Message("heat");
+    message.destinationName = "hvac/mode";
+    client.send(message);
+    $('#heat').addClass('disabled');
+});
 
-    $('#cool').click(function(){
-        message = new Paho.MQTT.Message("cool");
-        message.destinationName = "hvac/mode";
-        client.send(message);
-	$('#cool').addClass('hide');
-    });
+$('#cool').click(function() {
+    message = new Paho.MQTT.Message("cool");
+    message.destinationName = "hvac/mode";
+    client.send(message);
+    $('#cool').addClass('disabled');
+});
 
-    $('#off').click(function(){
-        message = new Paho.MQTT.Message("off");
-        message.destinationName = "hvac/mode";
-        client.send(message);
-        $('#off').addClass('hide');
-    });
+$('#off').click(function() {
+    message = new Paho.MQTT.Message("off");
+    message.destinationName = "hvac/mode";
+    client.send(message);
+    $('#off').addClass('disabled');
+});
 
 });
 </script>
