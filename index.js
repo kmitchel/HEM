@@ -2,13 +2,13 @@
 var spawn = require("child_process").spawn
 var child = spawn("rrdtool", ["-"])
 
-child.stdout.on("data", function(data) {
+child.stdout.on("data", function (data) {
     if (data.toString().indexOf("OK") !== 0) {
         console.log(data.toString())
     }
 })
 
-child.stderr.on("data", function(data) {
+child.stderr.on("data", function (data) {
     console.error(data.toString())
 })
 
@@ -61,35 +61,35 @@ function graph(req, res) {
                 arg.push("-s")
                 arg.push("now-24hour")
                 arg.push("VRULE:" + Math.round(SunCalc.getTimes(new Date().setDate(
-                        now.getDate() - 1), 41.1660, -85.4831).sunrise.getTime() / 1000) +
+                    now.getDate() - 1), 41.1660, -85.4831).sunrise.getTime() / 1000) +
                     "#FFA500")
                 arg.push("VRULE:" + Math.round(SunCalc.getTimes(new Date().setDate(
-                        now.getDate() - 1), 41.1660, -85.4831).solarNoon.getTime() / 1000) +
+                    now.getDate() - 1), 41.1660, -85.4831).solarNoon.getTime() / 1000) +
                     "#ff0000")
                 arg.push("VRULE:" + Math.round(SunCalc.getTimes(new Date().setDate(
-                        now.getDate() - 1), 41.1660, -85.4831).sunset.getTime() / 1000) +
+                    now.getDate() - 1), 41.1660, -85.4831).sunset.getTime() / 1000) +
                     "#00a5ff")
                 break
             case "48h":
                 arg.push("-s")
                 arg.push("now-48hour")
                 arg.push("VRULE:" + Math.round(SunCalc.getTimes(new Date().setDate(
-                        now.getDate() - 1), 41.1660, -85.4831).sunrise.getTime() / 1000) +
+                    now.getDate() - 1), 41.1660, -85.4831).sunrise.getTime() / 1000) +
                     "#FFA500")
                 arg.push("VRULE:" + Math.round(SunCalc.getTimes(new Date().setDate(
-                        now.getDate() - 1), 41.1660, -85.4831).solarNoon.getTime() / 1000) +
+                    now.getDate() - 1), 41.1660, -85.4831).solarNoon.getTime() / 1000) +
                     "#ff0000")
                 arg.push("VRULE:" + Math.round(SunCalc.getTimes(new Date().setDate(
-                        now.getDate() - 1), 41.1660, -85.4831).sunset.getTime() / 1000) +
+                    now.getDate() - 1), 41.1660, -85.4831).sunset.getTime() / 1000) +
                     "#00a5ff")
                 arg.push("VRULE:" + Math.round(SunCalc.getTimes(new Date().setDate(
-                        now.getDate() - 2), 41.1660, -85.4831).sunrise.getTime() / 1000) +
+                    now.getDate() - 2), 41.1660, -85.4831).sunrise.getTime() / 1000) +
                     "#FFA500")
                 arg.push("VRULE:" + Math.round(SunCalc.getTimes(new Date().setDate(
-                        now.getDate() - 2), 41.1660, -85.4831).solarNoon.getTime() / 1000) +
+                    now.getDate() - 2), 41.1660, -85.4831).solarNoon.getTime() / 1000) +
                     "#ff0000")
                 arg.push("VRULE:" + Math.round(SunCalc.getTimes(new Date().setDate(
-                        now.getDate() - 2), 41.1660, -85.4831).sunset.getTime() / 1000) +
+                    now.getDate() - 2), 41.1660, -85.4831).sunset.getTime() / 1000) +
                     "#00a5ff")
                 break
         }
@@ -138,10 +138,10 @@ function graph(req, res) {
             break
     }
     var child = spawn("rrdtool", arg)
-    child.on("error", function(data) {
+    child.on("error", function (data) {
         console.error(data.toString())
     })
-    child.stdout.on("data", function(data) {
+    child.stdout.on("data", function (data) {
         //console.log(data.toString())
     })
     child.stdout.pipe(res)
@@ -152,7 +152,7 @@ let leveldb = require("level")("./hemdb", {
     valueEncoding: "json"
 })
 
-app.get("/data/:collection/:past", function(req, res) {
+app.get("/data/:collection/:past", function (req, res) {
     var collectionName
     var past
 
@@ -160,7 +160,7 @@ app.get("/data/:collection/:past", function(req, res) {
         collectionName = req.params.collection
     }
 
-    if ("past" in req.params){
+    if ("past" in req.params) {
         past = req.params.past
     } else {
         past = "01"
@@ -170,45 +170,45 @@ app.get("/data/:collection/:past", function(req, res) {
     var index = 0
 
     if (past == '0') {
-        past =""
+        past = ""
     } else {
         past = Date.now() - Number(past) * 60 * 60 * 1000
     }
 
-    leveldb.createReadStream({gt: collectionName + "-00-" + past, lt: collectionName + "-00."})
-    .on('data', function(data) {
-        let t = data.key.split("-")[3]
-        out[index] = [Number(t), data.value]
-        index++
-    })
-    .on('end', function() {
-        if (collectionName == "water-GPM") {
-            res.json([{
-                data: out,
-                type: "bar"
-            }])
-        } else {
-            res.json([{
-                data: out
-            }])
-        }
-    })
+    leveldb.createReadStream({ gt: collectionName + "-00-" + past, lt: collectionName + "-00." })
+        .on('data', function (data) {
+            let t = data.key.split("-")[3]
+            out[index] = [Number(t), data.value]
+            index++
+        })
+        .on('end', function () {
+            if (collectionName == "water-GPM") {
+                res.json([{
+                    data: out,
+                    type: "bar"
+                }])
+            } else {
+                res.json([{
+                    data: out
+                }])
+            }
+        })
 })
 
-app.get("/data/:collection/:time/:past", function(req, res) {
+app.get("/data/:collection/:time/:past", function (req, res) {
     var collectionName
     if ("collection" in req.params && "time" in req.params) {
         collectionName = req.params.collection + "-" + req.params.time
     }
 
-    if ("past" in req.params){
+    if ("past" in req.params) {
         past = req.params.past
     } else {
         past = "01"
     }
 
     if (past == '0') {
-        past =""
+        past = ""
     } else {
         past = Date.now() - Number(past) * 60 * 60 * 1000
     }
@@ -216,12 +216,12 @@ app.get("/data/:collection/:time/:past", function(req, res) {
     if (req.params.collection === "power-kWh" || req.params.collection === "water-Gal" || req.params.collection === "hvac-heat") {
 
         let out = []
-        leveldb.createReadStream({gt: collectionName + "-" + past, lt: collectionName + "."})
-            .on('data', function(data) {
+        leveldb.createReadStream({ gt: collectionName + "-" + past, lt: collectionName + "." })
+            .on('data', function (data) {
                 let t = data.key.split("-")[3]
                 out.push([Number(t), data.value])
             })
-            .on('end', function() {
+            .on('end', function () {
                 res.json([{
                     data: out
                 }])
@@ -229,13 +229,13 @@ app.get("/data/:collection/:time/:past", function(req, res) {
     } else {
         let range = []
         let avg = []
-        leveldb.createReadStream({gt: collectionName + "-" + past, lt: collectionName + "."})
-            .on('data', function(data) {
+        leveldb.createReadStream({ gt: collectionName + "-" + past, lt: collectionName + "." })
+            .on('data', function (data) {
                 let t = data.key.split("-")[3]
                 range.push([Number(t), data.value[2], data.value[3]])
                 avg.push([Number(t), Number((data.value[1] / data.value[0]).toFixed(2))])
             })
-            .on('end', function() {
+            .on('end', function () {
                 res.json([{
                     name: "Min-Max",
                     data: range,
@@ -255,11 +255,11 @@ var client = mqtt.connect("mqtt://localhost", {
     clientId: "raspberrypi" + Math.random().toString(16).substr(2, 8)
 })
 
-client.on("connect", function() {
+client.on("connect", function () {
     client.subscribe("#")
 })
 
-client.on("message", function(topic, message) {
+client.on("message", function (topic, message) {
     switch (topic) {
         case "power/W":
             var dataW = Number(message.toString())
@@ -324,42 +324,42 @@ client.on("message", function(topic, message) {
             break
     }
 
-    topic = topic.split("/").join("-");
+    topic = topic.split("/").join("-")
 
     if (topic.indexOf("hvac-state") > -1) {
         if (message.toString() == "Cooling" || message.toString() == "CoolOn") {
-            updateCnt(leveldb, "hvac-cool", 0.25);
-            let key = "hvac-cool-28-" + getMonthBucket();
-            leveldb.get(key, function(error, data) {
+            updateCnt(leveldb, "hvac-cool", 0.25)
+            let key = "hvac-cool-28-" + getMonthBucket()
+            leveldb.get(key, function (error, data) {
                 if (!error || typeof data === 'number') {
-                    client.publish("hvac/coolTime", data.toFixed(2));
+                    client.publish("hvac/coolTime", data.toFixed(2))
                 }
             })
         } else if (message.toString() == "Heating" || message.toString() == "HeatOn") {
-            updateCnt(leveldb, "hvac-heat", 0.25);
-            let key = "hvac-heat-28-" + getMonthBucket();
-            leveldb.get(key, function(error, data) {
+            updateCnt(leveldb, "hvac-heat", 0.25)
+            let key = "hvac-heat-28-" + getMonthBucket()
+            leveldb.get(key, function (error, data) {
                 if (!error || typeof data === 'number') {
-                    client.publish("hvac/heatTime", data.toFixed(2));
+                    client.publish("hvac/heatTime", data.toFixed(2))
                 }
             })
         }
     } else if (topic.indexOf("power-W") > -1) {
         insertNow(leveldb, topic, message)
         insertAvg(leveldb, topic, message)
-        updateCnt(leveldb, "power-kWh", 0.001);
-        let key = "power-kWh-28-" + getMonthBucket();
-        leveldb.get(key, function(error, data) {
+        updateCnt(leveldb, "power-kWh", 0.001)
+        let key = "power-kWh-28-" + getMonthBucket()
+        leveldb.get(key, function (error, data) {
             if (!error || typeof data === 'number') {
-                client.publish("power/kWh", data.toFixed(3));
+                client.publish("power/kWh", data.toFixed(3))
             }
         })
     } else if (topic.indexOf("water-GPM") > -1) {
         insertNow(leveldb, topic, message)
         insertAvg(leveldb, topic, message)
         updateCnt(leveldb, "water-Gal", 0.25)
-        let key = "water-Gal-28-" + getMonthBucket();
-        leveldb.get(key, function(error, data) {
+        let key = "water-Gal-28-" + getMonthBucket()
+        leveldb.get(key, function (error, data) {
             if (!error || typeof data === 'number') {
                 client.publish("water/Gal", data.toFixed(2))
             }
@@ -371,17 +371,17 @@ client.on("message", function(topic, message) {
 })
 
 function getMonthBucket() {
-    let month;
+    let month
     if (new Date().getDate() > 6) {
-        month = new Date().getMonth();
+        month = new Date().getMonth()
     } else {
-        month = new Date().getMonth() - 1;
+        month = new Date().getMonth() - 1
     }
-    return new Date(new Date().getFullYear(), month, 7).getTime();
+    return new Date(new Date().getFullYear(), month, 7).getTime()
 }
 
 function insertNow(db, topic, message) {
-    let key = topic + "-00-" + Date.now();
+    let key = topic + "-00-" + Date.now()
     db.put(key, Number(message))
 }
 
@@ -393,11 +393,11 @@ function insertAvg(db, topic, message) {
         [60, Math.floor(Date.now() / (60 * 60 * 1000)) * 60 * 60 * 1000],
         [24, new Date().setHours(0, 0, 0, 0)],
         [28, getMonthBucket()]
-    ];
+    ]
 
-    buckets.forEach(function(currentValue) {
-        let key = topic + "-" + currentValue[0] + "-" + currentValue[1];
-        db.get(key, function(error, data) {
+    buckets.forEach(function (currentValue) {
+        let key = topic + "-" + currentValue[0] + "-" + currentValue[1]
+        db.get(key, function (error, data) {
             if (error) {
                 db.put(key, [
                     1,
@@ -424,11 +424,11 @@ function updateCnt(db, topic, incValue) {
         [60, Math.floor(Date.now() / (60 * 60 * 1000)) * 60 * 60 * 1000],
         [24, new Date().setHours(0, 0, 0, 0)],
         [28, getMonthBucket()]
-    ];
+    ]
 
-    buckets.forEach(function(currentValue) {
-        let key = topic + "-" + currentValue[0] + "-" + currentValue[1];
-        db.get(key, function(error, data) {
+    buckets.forEach(function (currentValue) {
+        let key = topic + "-" + currentValue[0] + "-" + currentValue[1]
+        db.get(key, function (error, data) {
             if (error) {
                 db.put(key, incValue)
             } else {
@@ -440,16 +440,16 @@ function updateCnt(db, topic, incValue) {
 
 const intervalObj = setInterval(() => {
     leveldb.createKeyStream()
-    .on('data', function (data) {
-        let split = data.split("-")
-        if (split[2] == "00") {
-            if (Number(split[3]) < Date.now() - 48 * 60 * 60 * 1000){
-                leveldb.del(data)
+        .on('data', function (data) {
+            let split = data.split("-")
+            if (split[2] == "00") {
+                if (Number(split[3]) < Date.now() - 48 * 60 * 60 * 1000) {
+                    leveldb.del(data)
+                }
             }
-        }
-    })
+        })
 
-  }, 30 * 60 * 1000);
+}, 30 * 60 * 1000)
 
 
 //   const intObj = setInterval(() => {
@@ -462,4 +462,4 @@ const intervalObj = setInterval(() => {
 //         }
 //     })
 
-//   }, 5000);
+//   }, 5000)

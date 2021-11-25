@@ -59,117 +59,118 @@
     <script src="js/mqtt.min.js"></script>
 
     <script>
-        $(function() {
+        $(function () {
             function time() {
-                return Math.floor(Date.now() / 1000 / 30) * 60 * 1000;
+                return Math.floor(Date.now() / 1000 / 30) * 60 * 1000
             }
 
             function loadImg(temp) {
-                $('#watt2').attr("src", "/graph/watt?" + temp + '&start=12h');
-                $('#temp2').attr("src", "/graph/temp?" + temp + '&start=12h');
-                $('#ac2').attr("src", "/graph/ac?" + temp + '&start=12h');
-                $('#wh2').attr("src", "/graph/wh?" + temp + '&start=12h');
-                $('#gpm2').attr("src", "/graph/gpm?" + temp + '&start=12h');
-                $('#watt24').attr("src", "/graph/watt?" + temp + '&start=48h');
-                $('#temp24').attr("src", "/graph/temp?" + temp + '&start=48h');
-                $('#ac24').attr("src", "/graph/ac?" + temp + '&start=48h');
-                $('#wh24').attr("src", "/graph/wh?" + temp + '&start=48h');
-                $('#gpm24').attr("src", "/graph/gpm?" + temp + '&start=48h');
+                $('#watt2').attr("src", "/graph/watt?" + temp + '&start=12h')
+                $('#temp2').attr("src", "/graph/temp?" + temp + '&start=12h')
+                $('#ac2').attr("src", "/graph/ac?" + temp + '&start=12h')
+                $('#wh2').attr("src", "/graph/wh?" + temp + '&start=12h')
+                $('#gpm2').attr("src", "/graph/gpm?" + temp + '&start=12h')
+                $('#watt24').attr("src", "/graph/watt?" + temp + '&start=48h')
+                $('#temp24').attr("src", "/graph/temp?" + temp + '&start=48h')
+                $('#ac24').attr("src", "/graph/ac?" + temp + '&start=48h')
+                $('#wh24').attr("src", "/graph/wh?" + temp + '&start=48h')
+                $('#gpm24').attr("src", "/graph/gpm?" + temp + '&start=48h')
             }
 
-            loadImg(time());
+            loadImg(time())
 
-            $('img').click(function() {
-                loadImg(time());
-            });
+            $('img').click(function () {
+                loadImg(time())
+            })
 
-var client = mqtt.connect("ws://kmitchel.ddns.net:9001")
+            var client = mqtt.connect("ws://kmitchel.ddns.net:9001")
 
-client.on('error', function (err) {
-  console.log(err)
-  client.end()
-})
+            client.on('error', function (err) {
+                console.log(err)
+                client.end()
+            })
 
-client.on('connect', function () {
-  client.subscribe('#')
-})
+            client.on('connect', function () {
+                client.subscribe('#')
+            })
 
-client.on('message', function (topic, message, packet) {
-    switch (topic) {
-        case 'hvac/state':
-            $('#state').html(message.toString());
-            break;
+            client.on('message', function (topic, message, packet) {
+                switch (topic) {
+                    case 'hvac/state':
+                        $('#state').html(message.toString())
+                        break
 
-        case 'power/W':
-            $('#power').html('Current Power: ' + message.toString() + 'W');
-            break;
+                    case 'power/W':
+                        $('#power').html('Current Power: ' + message.toString() + 'W')
+                        break
 
-        case 'temp/280049724c2001be':
-            $('#out').html('Outside Temp:  ' + message.toString() + 'F');
-            break;
+                    case 'temp/280049724c2001be':
+                        $('#out').html('Outside Temp:  ' + message.toString() + 'F')
+                        break
 
-        case 'temp/2809853f030000a7':
-            $('#upper').html('Upper WH Temp:  ' + message.toString() + 'F');
-            break;
+                    case 'temp/2809853f030000a7':
+                        $('#upper').html('Upper WH Temp:  ' + message.toString() + 'F')
+                        break
 
-        case 'temp/2813513f03000072':
-            $('#lower').html('Lower WH Temp:  ' + message.toString() + 'F');
-            break;
+                    case 'temp/2813513f03000072':
+                        $('#lower').html('Lower WH Temp:  ' + message.toString() + 'F')
+                        break
 
-        case 'temp/289fa756b5013c68':
-            $('#achigh').html('High AC Temp:  ' + message.toString() + 'F');
-            break;
+                    case 'temp/289fa756b5013c68':
+                        $('#achigh').html('High AC Temp:  ' + message.toString() + 'F')
+                        break
 
-        case 'temp/2874913c46200105':
-            $('#aclow').html('Low AC Temp:  ' + message.toString() + 'F');
-            break;
+                    case 'temp/2874913c46200105':
+                        $('#aclow').html('Low AC Temp:  ' + message.toString() + 'F')
+                        break
 
-        case 'water/Gal':
-            $('#gal').html('Gallons:  ' + message.toString());
-            break;
+                    case 'water/Gal':
+                        $('#gal').html('Gallons:  ' + message.toString())
+                        break
 
-        case 'water/GPM':
-            $('#gpm').html(message.toString() + ' GPM');
-            break;
+                    case 'water/GPM':
+                        $('#gpm').html(message.toString() + ' GPM')
+                        break
 
-        case 'temp/tempF':
-            $('#t').html('Inside Temp: ' + message.toString() + 'F');
-            break;
+                    case 'temp/tempF':
+                        $('#t').html('Inside Temp: ' + message.toString() + 'F')
+                        break
 
-        case 'temp/rh':
-            $('#rh').html('RH: ' + message.toString() + '%');
-            break;
+                    case 'temp/rh':
+                        $('#rh').html('RH: ' + message.toString() + '%')
+                        break
 
-        case 'temp/dewF':
-            $('#dew').html('DEW: ' + message.toString() + 'F');
-            break;
+                    case 'temp/dewF':
+                        $('#dew').html('DEW: ' + message.toString() + 'F')
+                        break
 
-        case 'power/kWh':
-            var cost = (message * 0.105 + 19) * 1.07;
-            var month;
-            if (new Date().getDate() > 6) {
-                month = new Date().getMonth();
-            } else {
-                month = new Date().getMonth() - 1;
-            }
-            var startOfBillingCycle = new Date(new Date().getFullYear(), month, 7).getTime();
-            var endOfBillingCycle = new Date(new Date().getFullYear(), month + 1, 7).getTime();
-            var projectedkWh = Number(message) / (new Date().getTime() - startOfBillingCycle) * (endOfBillingCycle - startOfBillingCycle);
-            var projectedCost = (projectedkWh * 0.105 + 19) * 1.07;
-            $('#kWh').html(message.toString() + ' kWh @ $' + cost.toFixed(2) + '<br>Projected Monthly Cost:  ' + projectedkWh.toFixed(2) + 'kWh @ $' + projectedCost.toFixed(2));
-            break
+                    case 'power/kWh':
+                        var cost = (message * 0.105 + 19) * 1.07
+                        var month
+                        if (new Date().getDate() > 6) {
+                            month = new Date().getMonth()
+                        } else {
+                            month = new Date().getMonth() - 1
+                        }
+                        var startOfBillingCycle = new Date(new Date().getFullYear(), month, 7).getTime()
+                        var endOfBillingCycle = new Date(new Date().getFullYear(), month + 1, 7).getTime()
+                        var projectedkWh = Number(message) / (new Date().getTime() - startOfBillingCycle) * (endOfBillingCycle - startOfBillingCycle)
+                        var projectedCost = (projectedkWh * 0.105 + 19) * 1.07
+                        $('#kWh').html(message.toString() + ' kWh @ $' + cost.toFixed(2) + '<br>Projected Monthly Cost:  ' + projectedkWh.toFixed(2) + 'kWh @ $' + projectedCost.toFixed(2))
+                        break
 
-        case "hvac/coolTime":
-            $("#cool").html("Cool Runtime: " + message.toString() + " Min")
-            break
+                    case "hvac/coolTime":
+                        $("#cool").html("Cool Runtime: " + message.toString() + " Min")
+                        break
 
-        case "hvac/heatTime":
-            $("#heat").html("Heat Runtime: " + message.toString() + " Min")
-            break
+                    case "hvac/heatTime":
+                        $("#heat").html("Heat Runtime: " + message.toString() + " Min")
+                        break
 
-        }
-    })
-})
-</script>
+                }
+            })
+        })
+    </script>
 </body>
+
 </html>

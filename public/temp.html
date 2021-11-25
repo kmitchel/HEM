@@ -1,159 +1,160 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-    <meta name="description" content="">
-    <meta name="author" content="">
-    <link rel="icon" href="../../favicon.ico">
 
-    <title>Home Energy Management</title>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- The above 3 meta tags *must* come first in the head any other head content must come *after* these tags -->
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <link rel="icon" href="../../favicon.ico">
 
-    <!-- Bootstrap core CSS -->
-    <link href="css/bootstrap.min.css" rel="stylesheet">
+  <title>Home Energy Management</title>
 
-    <!-- Custom styles for this template -->
-    <link href="cover.css" rel="stylesheet">
+  <!-- Bootstrap core CSS -->
+  <link href="css/bootstrap.min.css" rel="stylesheet">
 
-    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
-    <!--[if lt IE 9]>
+  <!-- Custom styles for this template -->
+  <link href="css/cover.css" rel="stylesheet">
+
+  <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+  <!--[if lt IE 9]>
       <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
-  </head>
+</head>
 
-  <body>
+<body>
 
-    <div class="site-wrapper">
+  <div class="site-wrapper">
 
-      <div class="site-wrapper-inner">
+    <div class="site-wrapper-inner">
 
-        <div class="cover-container">
+      <div class="cover-container">
 
-          <div class="masthead clearfix">
-            <div class="inner">
-              <div class="alert alert-danger hide" id="disMQTT">MQTT Disconnected</div>
-              <h3 class="masthead-brand">Thermostat</h3>
-<!--               <nav>
+        <div class="masthead clearfix">
+          <div class="inner">
+            <div class="alert alert-danger hide" id="disMQTT">MQTT Disconnected</div>
+            <h3 class="masthead-brand">Thermostat</h3>
+            <!--               <nav>
                 <ul class="nav masthead-nav">
                   <li class="active"><a href="#">Home</a></li>
                   <li><a href="#">Features</a></li>
                   <li><a href="#">Contact</a></li>
                 </ul>
               </nav> -->
-            </div>
           </div>
+        </div>
 
-          <div class="inner cover">
-            <h1 class="cover-heading"><span id="temp"></span> F</h1>
-            <div>
-              <p>Humidity:  <span id="rh"></span> %</p>
-              <p>Discomfort:  <span id="di"></span> F</p>
-              <p>Outdoor Temp: <span id="out"></span> F </p>
-              <p><span id="state"></span></p>
-            </div>
-            <div>
+        <div class="inner cover">
+          <h1 class="cover-heading"><span id="temp"></span> F</h1>
+          <div>
+            <p>Humidity: <span id="rh"></span> %</p>
+            <p>Discomfort: <span id="di"></span> F</p>
+            <p>Outdoor Temp: <span id="out"></span> F </p>
+            <p><span id="state"></span></p>
+          </div>
+          <div>
             <h3 class="text-info">
               Cool Setpoint</h3>
-              <span class="btn btn-default btn-xs glyphicon glyphicon-minus disabled" id="coolSetDown"></span>
-              <span id="coolSet" class="lead"></span>
-              <span class="btn btn-default btn-xs glyphicon glyphicon-plus disabled" id="coolSetUp"></span>
+            <span class="btn btn-default btn-xs glyphicon glyphicon-minus disabled" id="coolSetDown"></span>
+            <span id="coolSet" class="lead"></span>
+            <span class="btn btn-default btn-xs glyphicon glyphicon-plus disabled" id="coolSetUp"></span>
           </div>
           <div>
             <h3 class="text-danger">
               Heat Setpoint</h3>
-              <span class="btn btn-default btn-xs glyphicon glyphicon-minus disabled" id="heatSetDown"></span>
-              <span id="heatSet" class="lead"></span>
-              <span class="btn btn-default btn-xs glyphicon glyphicon-plus disabled" id="heatSetUp"></span>
-            </div>
-            <p class="lead" id="status"></p>
+            <span class="btn btn-default btn-xs glyphicon glyphicon-minus disabled" id="heatSetDown"></span>
+            <span id="heatSet" class="lead"></span>
+            <span class="btn btn-default btn-xs glyphicon glyphicon-plus disabled" id="heatSetUp"></span>
           </div>
-          <div>
-            <p><span class="disabled btn btn-info" id="cool">Cool Mode</span></p>
-            <p><span class="disabled btn btn-danger" id="heat">Heat Mode</span></p>
-            <p><span class="disabled btn btn-default" id="off">Off Mode</span></p>
-          </div>
-          <div class="mastfoot">
-            <div class="inner">
-              <p>Home Energy Management</p>
-            </div>
+          <p class="lead" id="status"></p>
+        </div>
+        <div>
+          <p><span class="disabled btn btn-info" id="cool">Cool Mode</span></p>
+          <p><span class="disabled btn btn-danger" id="heat">Heat Mode</span></p>
+          <p><span class="disabled btn btn-default" id="off">Off Mode</span></p>
+        </div>
+        <div class="mastfoot">
+          <div class="inner">
+            <p>Home Energy Management</p>
           </div>
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- Bootstrap core JavaScript
+  <!-- Bootstrap core JavaScript
     ================================================== -->
-    <!-- Placed at the end of the document so the pages load faster -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="js/bootstrap.min.js"></script>
-    <script src="js/mqtt.min.js"></script>
+  <!-- Placed at the end of the document so the pages load faster -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="js/bootstrap.min.js"></script>
+  <script src="js/mqtt.min.js"></script>
 
-<script>
-$(function() {
+  <script>
+    $(function () {
 
-var temp = [];
+      var temp = []
 
-var client = mqtt.connect("ws://kmitchel.ddns.net:9001")
+      var client = mqtt.connect("ws://kmitchel.ddns.net:9001")
 
-client.on('error', function (err) {
-  console.log(err)
-  client.end()
-})
+      client.on('error', function (err) {
+        console.log(err)
+        client.end()
+      })
 
-client.on('connect', function () {
-  client.subscribe("hvac/+");
-    client.subscribe("temp/tempF");
-    client.subscribe("temp/di");
-    client.subscribe("temp/rh");
-    client.subscribe("temp/280049724c2001be");
-    client.publish("hvac/coolSet", "?")
-    client.publish("hvac/heatSet", "?")
-  })
+      client.on('connect', function () {
+        client.subscribe("hvac/+")
+        client.subscribe("temp/tempF")
+        client.subscribe("temp/di")
+        client.subscribe("temp/rh")
+        client.subscribe("temp/280049724c2001be")
+        client.publish("hvac/coolSet", "?")
+        client.publish("hvac/heatSet", "?")
+      })
 
-client.on('close', function(){
-  $('#disMQTT').removeClass('hide');
-    $('#disMQTT').click(function() {
-      client.reconnect()
-        $('#disMQTT').addClass('hide');
-    });
-})
+      client.on('close', function () {
+        $('#disMQTT').removeClass('hide')
+        $('#disMQTT').click(function () {
+          client.reconnect()
+          $('#disMQTT').addClass('hide')
+        })
+      })
 
-client.on('message', function (topic, message) {
+      client.on('message', function (topic, message) {
 
-    temp[topic] = message.toString();
+        temp[topic] = message.toString()
 
-    switch (topic) {
-        case 'hvac/state':
-            $('#state').html(message.toString());
+        switch (topic) {
+          case 'hvac/state':
+            $('#state').html(message.toString())
             if (message.toString().includes("Heat")) {
-                $('#cool').removeClass('disabled');
-                $('#heat').addClass('disabled');
-                $('#off').removeClass('disabled');
+              $('#cool').removeClass('disabled')
+              $('#heat').addClass('disabled')
+              $('#off').removeClass('disabled')
             }
             if (message.toString().includes("Cool")) {
-                $('#heat').removeClass('disabled');
-                $('#cool').addClass('disabled');
-                $('#off').removeClass('disabled');
+              $('#heat').removeClass('disabled')
+              $('#cool').addClass('disabled')
+              $('#off').removeClass('disabled')
             }
             if (message.toString().includes("Off")) {
-                $('#heat').removeClass('disabled');
-                $('#cool').removeClass('disabled');
-                $('#off').addClass('disabled');
+              $('#heat').removeClass('disabled')
+              $('#cool').removeClass('disabled')
+              $('#off').addClass('disabled')
             }
-            break;
-        case 'temp/tempF':
-            $('#temp').html(message.toString());
-            break;
-        case 'temp/di':
-            $('#di').html(message.toString());
-            break;
-        case 'temp/rh':
-            $('#rh').html(message.toString());
-            break;
-        case 'hvac/coolSet':
+            break
+          case 'temp/tempF':
+            $('#temp').html(message.toString())
+            break
+          case 'temp/di':
+            $('#di').html(message.toString())
+            break
+          case 'temp/rh':
+            $('#rh').html(message.toString())
+            break
+          case 'hvac/coolSet':
             if (message.toString() == "?") break
             if (Number(message.toString()) < 60) {
               client.publish("hvac/coolSet", "60")
@@ -161,13 +162,13 @@ client.on('message', function (topic, message) {
             if (Number(message.toString()) > 85) {
               client.publish("hvac/coolSet", "85")
             }
-            $('#coolSet').html(message.toString());
-            setTimeout(function() {
-                $('#coolSetDown').removeClass("disabled");
-                $('#coolSetUp').removeClass("disabled");
+            $('#coolSet').html(message.toString())
+            setTimeout(function () {
+              $('#coolSetDown').removeClass("disabled")
+              $('#coolSetUp').removeClass("disabled")
             }, 250)
-            break;
-        case 'hvac/heatSet':
+            break
+          case 'hvac/heatSet':
             if (message.toString() == "?") break
             if (Number(message.toString()) < 60) {
               client.publish("hvac/heatSet", "60")
@@ -175,62 +176,63 @@ client.on('message', function (topic, message) {
             if (Number(message.toString()) > 85) {
               client.publish("hvac/heatSet", "85")
             }
-            $('#heatSet').html(message.toString());
-            setTimeout(function() {
-                $('#heatSetDown').delay(1000).removeClass("disabled");
-                $('#heatSetUp').delay(1000).removeClass("disabled");
+            $('#heatSet').html(message.toString())
+            setTimeout(function () {
+              $('#heatSetDown').delay(1000).removeClass("disabled")
+              $('#heatSetUp').delay(1000).removeClass("disabled")
             }, 250)
-            break;
-        case 'temp/280049724c2001be':
-            $('#out').html(message.toString());
-            break;
-    }
-})
+            break
+          case 'temp/280049724c2001be':
+            $('#out').html(message.toString())
+            break
+        }
+      })
 
-$('#coolSetDown').click(function() {
-    $('#coolSetDown').addClass("disabled")
-    $("#coolSetUp").addClass("disabled")
-    client.publish("hvac/coolSet", (Number(temp['hvac/coolSet']) - 1).toString())
-    client.publish("hvac/coolSet", "?")
-});
+      $('#coolSetDown').click(function () {
+        $('#coolSetDown').addClass("disabled")
+        $("#coolSetUp").addClass("disabled")
+        client.publish("hvac/coolSet", (Number(temp['hvac/coolSet']) - 1).toString())
+        client.publish("hvac/coolSet", "?")
+      })
 
-$('#coolSetUp').click(function() {
-    $('#coolSetDown').addClass("disabled")
-    $('#coolSetUp').addClass("disabled")
-    client.publish("hvac/coolSet", (Number(temp['hvac/coolSet']) + 1).toString())
-    client.publish("hvac/coolSet", "?")
-});
+      $('#coolSetUp').click(function () {
+        $('#coolSetDown').addClass("disabled")
+        $('#coolSetUp').addClass("disabled")
+        client.publish("hvac/coolSet", (Number(temp['hvac/coolSet']) + 1).toString())
+        client.publish("hvac/coolSet", "?")
+      })
 
-$('#heatSetDown').click(function() {
-    $('#heatSetDown').addClass("disabled");
-    $('#heatSetUp').addClass("disabled");
-    client.publish("hvac/heatSet", (Number(temp['hvac/heatSet']) - 1).toString())
-    client.publish("hvac/heatSet", "?")
-});
+      $('#heatSetDown').click(function () {
+        $('#heatSetDown').addClass("disabled")
+        $('#heatSetUp').addClass("disabled")
+        client.publish("hvac/heatSet", (Number(temp['hvac/heatSet']) - 1).toString())
+        client.publish("hvac/heatSet", "?")
+      })
 
-$('#heatSetUp').click(function() {
-    $('#heatSetDown').addClass("disabled");
-    $('#heatSetUp').addClass("disabled");
-    client.publish("hvac/heatSet", (Number(temp['hvac/heatSet']) + 1).toString())
-    client.publish("hvac/heatSet", "?")
-});
+      $('#heatSetUp').click(function () {
+        $('#heatSetDown').addClass("disabled")
+        $('#heatSetUp').addClass("disabled")
+        client.publish("hvac/heatSet", (Number(temp['hvac/heatSet']) + 1).toString())
+        client.publish("hvac/heatSet", "?")
+      })
 
-$('#heat').click(function() {
-    client.publish("hvac/mode", "heat")
-    $('#heat').addClass('disabled');
-});
+      $('#heat').click(function () {
+        client.publish("hvac/mode", "heat")
+        $('#heat').addClass('disabled')
+      })
 
-$('#cool').click(function() {
-    client.publish("hvac/mode", "cool")
-    $('#cool').addClass('disabled');
-});
+      $('#cool').click(function () {
+        client.publish("hvac/mode", "cool")
+        $('#cool').addClass('disabled')
+      })
 
-$('#off').click(function() {
-    client.publish("hvac/mode", "off")
-    $('#off').addClass('disabled');
-});
+      $('#off').click(function () {
+        client.publish("hvac/mode", "off")
+        $('#off').addClass('disabled')
+      })
 
-});
-</script>
+    })
+  </script>
 </body>
+
 </html>
