@@ -14,7 +14,7 @@ child.stderr.on("data", function (data) {
 
 //Webserver
 var express = require("express")
-var compression = require('compression')
+var compression = require("compression")
 var app = express()
 var server = require("http").Server(app)
 server.listen(8080)
@@ -169,19 +169,19 @@ app.get("/data/:collection/:past", function (req, res) {
     var out = []
     var index = 0
 
-    if (past == '0') {
+    if (past == "0") {
         past = ""
     } else {
         past = Date.now() - Number(past) * 60 * 60 * 1000
     }
 
     leveldb.createReadStream({ gt: collectionName + "-00-" + past, lt: collectionName + "-00." })
-        .on('data', function (data) {
+        .on("data", function (data) {
             let t = data.key.split("-")[3]
             out[index] = [Number(t), data.value]
             index++
         })
-        .on('end', function () {
+        .on("end", function () {
             if (collectionName == "water-GPM") {
                 res.json([{
                     data: out,
@@ -207,7 +207,7 @@ app.get("/data/:collection/:time/:past", function (req, res) {
         past = "01"
     }
 
-    if (past == '0') {
+    if (past == "0") {
         past = ""
     } else {
         past = Date.now() - Number(past) * 60 * 60 * 1000
@@ -217,11 +217,11 @@ app.get("/data/:collection/:time/:past", function (req, res) {
 
         let out = []
         leveldb.createReadStream({ gt: collectionName + "-" + past, lt: collectionName + "." })
-            .on('data', function (data) {
+            .on("data", function (data) {
                 let t = data.key.split("-")[3]
                 out.push([Number(t), data.value])
             })
-            .on('end', function () {
+            .on("end", function () {
                 res.json([{
                     data: out
                 }])
@@ -230,12 +230,12 @@ app.get("/data/:collection/:time/:past", function (req, res) {
         let range = []
         let avg = []
         leveldb.createReadStream({ gt: collectionName + "-" + past, lt: collectionName + "." })
-            .on('data', function (data) {
+            .on("data", function (data) {
                 let t = data.key.split("-")[3]
                 range.push([Number(t), data.value[2], data.value[3]])
                 avg.push([Number(t), Number((data.value[1] / data.value[0]).toFixed(2))])
             })
-            .on('end', function () {
+            .on("end", function () {
                 res.json([{
                     name: "Min-Max",
                     data: range,
@@ -331,7 +331,7 @@ client.on("message", function (topic, message) {
             updateCnt(leveldb, "hvac-cool", 0.25)
             let key = "hvac-cool-28-" + getMonthBucket()
             leveldb.get(key, function (error, data) {
-                if (!error || typeof data === 'number') {
+                if (!error || typeof data === "number") {
                     client.publish("hvac/coolTime", data.toFixed(2))
                 }
             })
@@ -339,7 +339,7 @@ client.on("message", function (topic, message) {
             updateCnt(leveldb, "hvac-heat", 0.25)
             let key = "hvac-heat-28-" + getMonthBucket()
             leveldb.get(key, function (error, data) {
-                if (!error || typeof data === 'number') {
+                if (!error || typeof data === "number") {
                     client.publish("hvac/heatTime", data.toFixed(2))
                 }
             })
@@ -350,7 +350,7 @@ client.on("message", function (topic, message) {
         updateCnt(leveldb, "power-kWh", 0.001)
         let key = "power-kWh-28-" + getMonthBucket()
         leveldb.get(key, function (error, data) {
-            if (!error || typeof data === 'number') {
+            if (!error || typeof data === "number") {
                 client.publish("power/kWh", data.toFixed(3))
             }
         })
@@ -360,7 +360,7 @@ client.on("message", function (topic, message) {
         updateCnt(leveldb, "water-Gal", 0.25)
         let key = "water-Gal-28-" + getMonthBucket()
         leveldb.get(key, function (error, data) {
-            if (!error || typeof data === 'number') {
+            if (!error || typeof data === "number") {
                 client.publish("water/Gal", data.toFixed(2))
             }
         })
@@ -440,7 +440,7 @@ function updateCnt(db, topic, incValue) {
 
 const intervalObj = setInterval(() => {
     leveldb.createKeyStream()
-        .on('data', function (data) {
+        .on("data", function (data) {
             let split = data.split("-")
             if (split[2] == "00") {
                 if (Number(split[3]) < Date.now() - 48 * 60 * 60 * 1000) {
@@ -454,7 +454,7 @@ const intervalObj = setInterval(() => {
 
 //   const intObj = setInterval(() => {
 //     leveldb.createKeyStream()
-//     .on('data', function (data) {
+//     .on("data", function (data) {
 //         let split = data.split("-")
 //         if (split[2] == "01") {
 //                 console.log("Delete " + split[0] + " " + Number(split[3]))

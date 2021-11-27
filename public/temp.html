@@ -35,7 +35,6 @@
 
         <div class="masthead clearfix">
           <div class="inner">
-            <div class="alert alert-danger hide" id="disMQTT">MQTT Disconnected</div>
             <h3 class="masthead-brand">Thermostat</h3>
             <!--               <nav>
                 <ul class="nav masthead-nav">
@@ -110,14 +109,6 @@
         client.subscribe("temp/280049724c2001be")
         client.publish("hvac/coolSet", "?")
         client.publish("hvac/heatSet", "?")
-      })
-
-      client.on("close", function () {
-        $("#disMQTT").removeClass("hide")
-        $("#disMQTT").click(function () {
-          client = mqtt.connect("ws://kmitchel.ddns.net:9001")
-          $("#disMQTT").addClass("hide")
-        })
       })
 
       client.on("message", function (topic, message) {
