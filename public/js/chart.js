@@ -77,8 +77,9 @@ $(function () {
             url = '/data/' + collection + '/' + time + "/" + past
         }
 
+        $('.btnGroup').addClass('hide')
+
         $.getJSON(url, function (data) {
-            $('.btnGroup').addClass('hide')
 
             while (chart.series.length > 0) {
                 chart.series[0].remove(false)
