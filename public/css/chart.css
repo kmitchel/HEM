@@ -5,5 +5,8 @@
   background-color: rgb(72, 151, 241);
 }
 .hide {
-  display:none;
+  display: none;
+}
+#container {
+  width: 100%;
 }

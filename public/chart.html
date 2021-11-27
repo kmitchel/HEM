@@ -4,53 +4,46 @@
 
 <head>
     <meta charset="utf-8">
-
-    <title></title>
+    <title>Home Energy Management</title>
     <meta name="description" content="">
     <meta name="author" content="kmitchel46725">
     <link rel="stylesheet" href="css/chart.css">
-
-    <!--[if lt IE 9]>
-    <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-  <![endif]-->
 </head>
 
 <body>
-    <div id="container" style="width:100%; height:100%;"></div>
+    <div id="container"></div>
     <div class='btnGroup type hide'>
-      <button id='power-kWh' data-title='Electricity Consumption' data-unit='kWh'>kWh</button>
-      <button id='power-W' class='selected' data-title='Electricity Consumption Rate' data-unit='W'>W</button>
-      <button id='water-Gal' data-title='Water Consumption' data-unit='Gal'>Gal</button>
-      <button id='water-GPM' data-title='Water Consumption Rate' data-unit='GPM'>GPM</button>
-      <button id='temp-tempF' data-title='Inside Temperature' data-unit='F'>Inside Temp</button>
-      <button id='temp-dewF' data-title='Inside Dew Point' data-unit='F'>Inside Dew</button>
-      <button id='temp-rh' data-title='Inside Relative Humidity' data-unit='%'>Inside RH</button>
-      <button id='temp-280049724c2001be' data-title='Outside Temperature' data-unit='F'>Outside Temp</button>
-      <button id='temp-2809853f030000a7' data-title='Upper Water Heater Temperature' data-unit='F'>Upper Temp</button>
-      <button id='temp-2813513f03000072' data-title='Lower Water Heater Temperature' data-unit='F'>Lower Temp</button>
-      <button id='wh' data-title='Water Heater Temperature' data-unit='F'>Water Heater Temp</button>
-      <button id='hvac-heat' data-title='HVAC Heat Time'>HVAC Heat Time</button>
-
+      <button data-type='power-kWh' data-title='Electricity Consumption' data-unit='kWh'>kWh</button>
+      <button data-type='power-W' class='selected' data-title='Electricity Consumption Rate' data-unit='W'>W</button>
+      <button data-type='water-Gal' data-title='Water Consumption' data-unit='Gal'>Gal</button>
+      <button data-type='water-GPM' data-title='Water Consumption Rate' data-unit='GPM'>GPM</button>
+      <button data-type='temp-tempF' data-title='Inside Temperature' data-unit='F'>Inside Temp</button>
+      <button data-type='temp-dewF' data-title='Inside Dew Point' data-unit='F'>Inside Dew</button>
+      <button data-type='temp-rh' data-title='Inside Relative Humidity' data-unit='%'>Inside RH</button>
+      <button data-type='temp-280049724c2001be' data-title='Outside Temperature' data-unit='F'>Outside Temp</button>
+      <button data-type='temp-2809853f030000a7' data-title='Upper Water Heater Temperature' data-unit='F'>Upper Temp</button>
+      <button data-type='temp-2813513f03000072' data-title='Lower Water Heater Temperature' data-unit='F'>Lower Temp</button>
+      <button data-type='hvac-heat' data-title='HVAC Heat Time'>HVAC Heat Time</button>
     </div>
     <div class='btnGroup time hide'>
-      <button id='00' class='selected'>0</button>
-      <button id='01' data-sub='At 1 minute intervals'>1</button>
-      <button id='05' data-sub='At 5 minute intervals'>5</button>
-      <button id='15' data-sub='At 15 minute intervals'>15</button>
-      <button id='60' data-sub='At 1 hour intervals'>60</button>
-      <button id='24' data-sub='At 24 hour intervals'>24</button>
-      <button id='28' data-sub='At 1 Month intervals'>28</button>
+      <button data-time='00' class='selected'>0</button>
+      <button data-time='01' data-sub='At 1 minute intervals'>1</button>
+      <button data-time='05' data-sub='At 5 minute intervals'>5</button>
+      <button data-time='15' data-sub='At 15 minute intervals'>15</button>
+      <button data-time='60' data-sub='At 1 hour intervals'>60</button>
+      <button data-time='24' data-sub='At 24 hour intervals'>24</button>
+      <button data-time='28' data-sub='At 1 Month intervals'>28</button>
     </div>
     <div class='btnGroup past hide'>
-      <button id='01'class='selected'>1H</button>
-      <button id='06'>6H</button>
-      <button id='12'>12H</button>
-      <button id='24'>1D</button>
-      <button id='48'>2D</button>
-      <button id='168'>7D</button>
-      <button id='0'>All</button>
+      <button data-past='01' class='selected'>1H</button>
+      <button data-past='06'>6H</button>
+      <button data-past='12'>12H</button>
+      <button data-past='24'>1D</button>
+      <button data-past='48'>2D</button>
+      <button data-past='168'>7D</button>
+      <button data-past='0'>All</button>
     </div>
-    <script src="https://code.jquery.com/jquery-2.2.3.min.js" integrity="sha256-a23g1Nt4dtEYOj7bR+vTu7+T8VP13humZFBJNIYoEJo=" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="http://code.highcharts.com/highcharts.js"></script>
     <script src="http://code.highcharts.com/highcharts-more.js"></script>
     <script src="js/mqtt.min.js"></script>

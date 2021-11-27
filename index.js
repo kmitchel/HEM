@@ -1,6 +1,6 @@
 //Spawn rrdtool child process. Update RRD files.
-var spawn = require("child_process").spawn
-var child = spawn("rrdtool", ["-"])
+let spawn = require("child_process").spawn
+let child = spawn("rrdtool", ["-"])
 
 child.stdout.on("data", function (data) {
     if (data.toString().indexOf("OK") !== 0) {
@@ -13,29 +13,28 @@ child.stderr.on("data", function (data) {
 })
 
 //Webserver
-var express = require("express")
-var compression = require("compression")
-var app = express()
-var server = require("http").Server(app)
+let express = require("express")
+let compression = require("compression")
+let app = express()
+let server = require("http").Server(app)
 server.listen(8080)
 
 app.use(compression())
 
-var spawn = require("child_process").spawn
-var SunCalc = require("suncalc")
+let SunCalc = require("suncalc")
 
 function graph(req, res) {
     res.setHeader("Content-Type", "image/png")
-    var arg = ["graph", "-", "-a", "PNG", "-w", "1080", "-h", "240"]
+    let arg = ["graph", "-", "-a", "PNG", "-w", "1080", "-h", "240"]
 
-    var times = SunCalc.getTimes(new Date(), 41.1660, -85.4831)
+    let times = SunCalc.getTimes(new Date(), 41.1660, -85.4831)
 
     arg.push("VRULE:" + Math.round(times.sunrise.getTime() / 1000) + "#FFA500")
     arg.push("VRULE:" + Math.round(times.solarNoon.getTime() / 1000) + "#ff0000")
     arg.push("VRULE:" + Math.round(times.sunset.getTime() / 1000) + "#00a5ff")
 
     if ("start" in req.query) {
-        var now = new Date()
+        let now = new Date()
         switch (req.query.start) {
             case "1h":
                 arg.push("-s")
@@ -137,7 +136,7 @@ function graph(req, res) {
             arg.push("LINE1:fixgpm#000000:GPM")
             break
     }
-    var child = spawn("rrdtool", arg)
+    let child = spawn("rrdtool", arg)
     child.on("error", function (data) {
         console.error(data.toString())
     })
@@ -153,8 +152,8 @@ let leveldb = require("level")("./hemdb", {
 })
 
 app.get("/data/:collection/:past", function (req, res) {
-    var collectionName
-    var past
+    let collectionName
+    let past
 
     if ("collection" in req.params) {
         collectionName = req.params.collection
@@ -166,8 +165,8 @@ app.get("/data/:collection/:past", function (req, res) {
         past = "01"
     }
 
-    var out = []
-    var index = 0
+    let out = []
+    let index = 0
 
     if (past == "0") {
         past = ""
@@ -196,7 +195,7 @@ app.get("/data/:collection/:past", function (req, res) {
 })
 
 app.get("/data/:collection/:time/:past", function (req, res) {
-    var collectionName
+    let collectionName
     if ("collection" in req.params && "time" in req.params) {
         collectionName = req.params.collection + "-" + req.params.time
     }
@@ -250,8 +249,8 @@ app.get("/data/:collection/:time/:past", function (req, res) {
 
 app.use(express.static(__dirname + "/public"))
 
-var mqtt = require("mqtt")
-var client = mqtt.connect("mqtt://localhost", {
+let mqtt = require("mqtt")
+let client = mqtt.connect("mqtt://localhost", {
     clientId: "raspberrypi" + Math.random().toString(16).substr(2, 8)
 })
 
@@ -262,53 +261,34 @@ client.on("connect", function () {
 client.on("message", function (topic, message) {
     switch (topic) {
         case "power/W":
-            var dataW = Number(message.toString())
-            child.stdin.write("update " + __dirname + "/hem-w.rrd N:" + dataW + "\n")
+            child.stdin.write("update " + __dirname + "/hem-w.rrd N:" + Number(message.toString()) + "\n")
             break
         case "water/GPM":
-            var dataGPM = Number(message.toString())
-            child.stdin.write("update " + __dirname + "/hem-gpm.rrd N:" +
-                dataGPM + "\n")
+            child.stdin.write("update " + __dirname + "/hem-gpm.rrd N:" + Number(message.toString()) + "\n")
             break
         case "temp/tempF":
-            var dataF = Number(message.toString())
-            child.stdin.write("update " + __dirname + "/hem-in.rrd N:" +
-                dataF + "\n")
+            child.stdin.write("update " + __dirname + "/hem-in.rrd N:" + Number(message.toString()) + "\n")
             break
         case "temp/dewF":
-            var dataDew = Number(message.toString())
-            child.stdin.write("update " + __dirname + "/hem-dew.rrd N:" +
-                dataDew + "\n")
+            child.stdin.write("update " + __dirname + "/hem-dew.rrd N:" + Number(message.toString()) + "\n")
             break
         case "temp/rh":
-            var dataRH = Number(message.toString())
-            child.stdin.write("update " + __dirname + "/hem-rh.rrd N:" +
-                dataRH + "\n")
+            child.stdin.write("update " + __dirname + "/hem-rh.rrd N:" + Number(message.toString()) + "\n")
             break
         case "temp/280049724c2001be":
-            var dataOut = Number(message.toString())
-            child.stdin.write("update " + __dirname + "/hem-out.rrd N:" +
-                dataOut + "\n")
+            child.stdin.write("update " + __dirname + "/hem-out.rrd N:" + Number(message.toString()) + "\n")
             break
         case "temp/2809853f030000a7":
-            var dataUpper = Number(message.toString())
-            child.stdin.write("update " + __dirname + "/hem-upper.rrd N:" +
-                dataUpper + "\n")
+            child.stdin.write("update " + __dirname + "/hem-upper.rrd N:" + Number(message.toString()) + "\n")
             break
         case "temp/2813513f03000072":
-            var dataLower = Number(message.toString())
-            child.stdin.write("update " + __dirname + "/hem-lower.rrd N:" +
-                dataLower + "\n")
+            child.stdin.write("update " + __dirname + "/hem-lower.rrd N:" + Number(message.toString()) + "\n")
             break
         case "temp/289fa756b5013c68":
-            var dataACHigh = Number(message.toString())
-            child.stdin.write("update " + __dirname + "/hem-achigh.rrd N:" +
-                dataACHigh + "\n")
+            child.stdin.write("update " + __dirname + "/hem-achigh.rrd N:" + Number(message.toString()) + "\n")
             break
         case "temp/2874913c46200105":
-            var dataACLow = Number(message.toString())
-            child.stdin.write("update " + __dirname + "/hem-aclow.rrd N:" +
-                dataACLow + "\n")
+            child.stdin.write("update " + __dirname + "/hem-aclow.rrd N:" + Number(message.toString()) + "\n")
             break
         case "hvac/state":
             if (message.toString() == "Heating" || message.toString() == "HeatOn") {
