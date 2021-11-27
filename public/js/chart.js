@@ -35,7 +35,7 @@ $(function () {
     var client = mqtt.connect("ws://kmitchel.ddns.net:9001")
 
     function receiveMessage(topic, message) {
-        chart.series[0].addPoint([Date.now(), Number(message.toString())])
+        chart.series[0].addPoint([Date.now(), Number(message.toString())], true, true)
     }
 
     updateChart($('.type .selected').attr('id'), $('.time .selected').attr('id'), $('.past .selected').attr('id'), $('.type .selected').attr('data-title'), $('.time .selected').attr('data-sub'), $('.type .selected').attr('data-unit'));

@@ -329,21 +329,21 @@ client.on("message", function (topic, message) {
     if (topic.indexOf("hvac-state") > -1) {
         if (message.toString() == "Cooling" || message.toString() == "CoolOn") {
             updateCnt(leveldb, "hvac-cool", 0.25)
-            let key = "hvac-cool-28-" + getMonthBucket()
-            leveldb.get(key, function (error, data) {
-                if (!error || typeof data === "number") {
-                    client.publish("hvac/coolTime", data.toFixed(2))
-                }
-            })
         } else if (message.toString() == "Heating" || message.toString() == "HeatOn") {
             updateCnt(leveldb, "hvac-heat", 0.25)
-            let key = "hvac-heat-28-" + getMonthBucket()
-            leveldb.get(key, function (error, data) {
-                if (!error || typeof data === "number") {
-                    client.publish("hvac/heatTime", data.toFixed(2))
-                }
-            })
         }
+        let key = "hvac-cool-28-" + getMonthBucket()
+        leveldb.get(key, function (error, data) {
+            if (!error || typeof data === "number") {
+                client.publish("hvac/coolTime", data.toFixed(2))
+            }
+        })
+        key = "hvac-heat-28-" + getMonthBucket()
+        leveldb.get(key, function (error, data) {
+            if (!error || typeof data === "number") {
+                client.publish("hvac/heatTime", data.toFixed(2))
+            }
+        })
     } else if (topic.indexOf("power-W") > -1) {
         insertNow(leveldb, topic, message)
         insertAvg(leveldb, topic, message)
