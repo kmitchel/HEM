@@ -83,7 +83,7 @@
                 loadImg(time())
             })
 
-            var client = mqtt.connect("ws://kmitchel.ddns.net:9001")
+            let client = mqtt.connect("ws://kmitchel.ddns.net:9001")
 
             client.on("error", function (err) {
                 console.log(err)
@@ -145,17 +145,17 @@
                         break
 
                     case "power/kWh":
-                        var cost = (message * 0.105 + 19) * 1.07
-                        var month
+                        let cost = (message * 0.105 + 19) * 1.07
+                        let month
                         if (new Date().getDate() > 6) {
                             month = new Date().getMonth()
                         } else {
                             month = new Date().getMonth() - 1
                         }
-                        var startOfBillingCycle = new Date(new Date().getFullYear(), month, 7).getTime()
-                        var endOfBillingCycle = new Date(new Date().getFullYear(), month + 1, 7).getTime()
-                        var projectedkWh = Number(message) / (new Date().getTime() - startOfBillingCycle) * (endOfBillingCycle - startOfBillingCycle)
-                        var projectedCost = (projectedkWh * 0.105 + 19) * 1.07
+                        let startOfBillingCycle = new Date(new Date().getFullYear(), month, 7).getTime()
+                        let endOfBillingCycle = new Date(new Date().getFullYear(), month + 1, 7).getTime()
+                        let projectedkWh = Number(message) / (new Date().getTime() - startOfBillingCycle) * (endOfBillingCycle - startOfBillingCycle)
+                        let projectedCost = (projectedkWh * 0.105 + 19) * 1.07
                         $("#kWh").html(message.toString() + " kWh @ $" + cost.toFixed(2) + "<br>Projected Monthly Cost:  " + projectedkWh.toFixed(2) + "kWh @ $" + projectedCost.toFixed(2))
                         break
 
