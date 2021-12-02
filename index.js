@@ -194,6 +194,28 @@ app.get("/data/:collection/:past", function (req, res) {
         })
 })
 
+app.get("/dump/:collection", function(req,res){
+    let out = []
+    leveldb.createReadStream({gt:req.params.collection + "-", lt:req.params.collection + "."})
+    .on("data", function (data){
+        out.push([data.key, data.value])
+    })
+    .on("end", function(){
+        res.json(out)
+    })
+})
+
+app.get("/histogram", function(req,res){
+    let out = []
+    leveldb.createReadStream({gt:"power-W-00-", lt:"power-W-00."})
+    .on("data", function (data){
+        out.push(data.value)
+    })
+    .on("end", function(){
+        res.json([{type: "histogram", baseSeries: 1, binsNumber:50}, {visible:false, data: out}])
+    })
+})
+
 app.get("/data/:collection/:time/:past", function (req, res) {
     let collectionName
     if ("collection" in req.params && "time" in req.params) {
@@ -436,7 +458,7 @@ const intervalObj = setInterval(() => {
 //     leveldb.createKeyStream()
 //     .on("data", function (data) {
 //         let split = data.split("-")
-//         if (split[2] == "01") {
+//         if (split[0] == "test") {
 //                 console.log("Delete " + split[0] + " " + Number(split[3]))
 //                 leveldb.del(data)
 //         }

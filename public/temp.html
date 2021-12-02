@@ -93,6 +93,15 @@
   <script>
     $(function () {
 
+      let timer = 0
+
+      setInterval(function(){
+        timer += 1
+        if (timer > 100) timer = 100
+        $("#temp").css("color", "rgb(" + Math.floor(255 - 0.86 * timer)  + "," + Math.floor(255 - 1.87 * timer) + "," + Math.floor(255 - 1.89 * timer) +")")
+        console.log (timer)
+      }, 150)
+
       let temp = []
 
       let client = mqtt.connect("ws://kmitchel.ddns.net:9001")
@@ -136,6 +145,7 @@
             break
           case "temp/tempF":
             $("#temp").html("<h1 class=\"cover-heading\">" + message.toString() + " F</h1>")
+            timer = 0
             break
           case "temp/di":
             $("#di").html("<p>Discomfort: " + message.toString() + " F</p>")

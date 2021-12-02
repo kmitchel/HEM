@@ -56,7 +56,28 @@ $(function () {
 
     function updateChart(collection, time, past, title, sub, unit) {
         var url
+if (collection == "histogram"){
+    client.removeListener("message", receiveMessage)
+    client.unsubscribe("power/W")
 
+    $.getJSON("/histogram", function (data) {
+
+        while (chart.series.length > 0) {
+            chart.series[0].remove(false)
+        }
+
+        chart.setTitle({ text: title }, { text: sub })
+        chart.yAxis[0].setTitle({ text: unit })
+
+        data.forEach(function (element) {
+            chart.addSeries(element)
+        })
+
+        $('.btnGroup').removeClass('hide')
+
+    })
+
+ }else {
         if (collection == "power-W" && time == "00") {
             client.subscribe("power/W")
             client.on("message", receiveMessage)
@@ -95,5 +116,10 @@ $(function () {
             $('.btnGroup').removeClass('hide')
 
         })
+
     }
+
+
+    }
+
 })

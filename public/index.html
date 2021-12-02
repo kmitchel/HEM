@@ -83,6 +83,10 @@
                 loadImg(time())
             })
 
+            setInterval(function(){
+                loadImg(time())
+            },30000)
+
             let client = mqtt.connect("ws://kmitchel.ddns.net:9001")
 
             client.on("error", function (err) {
